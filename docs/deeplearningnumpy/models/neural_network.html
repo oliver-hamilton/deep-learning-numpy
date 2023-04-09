@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>deeplearningnumpy.models.neural_network API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>deeplearningnumpy.models.neural_network</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import numpy as np
+import os
+from deeplearningnumpy.cost_functions import CategoricalCrossEntropy
+from deeplearningnumpy.activations import ActivationSoftmax
+import pickle
+
+class NeuralNetwork:
+    &#34;&#34;&#34;Represents a neural network - this may be fully connected, convolutional, or some other type of network.&#34;&#34;&#34;
+    def __init__(self, name, layers):
+        self.name = name
+        self.layers = layers
+
+    def forward(self, inputs):
+        &#34;&#34;&#34;Performs a forward pass of the network.&#34;&#34;&#34;
+        # Initialise inputs to starting values
+        nextInputs = np.array(inputs)
+        for i in range(len(self.layers)):
+            self.layers[i].forward(nextInputs)
+            # Initialise inputs of next layer as outputs from current layer
+            nextInputs = self.layers[i].outputs
+
+    def getOutputs(self):
+        &#34;&#34;&#34;Returns the outputs from the last layer of the network.&#34;&#34;&#34;
+        return self.layers[-1].outputs
+
+    def saveWeights(self):
+        &#34;&#34;&#34;Saves the current weights for the network in a pickle file.&#34;&#34;&#34;
+        fileName = f&#34;deeplearningnumpy/data/{self.name}.pkl&#34;
+        with open(fileName, &#39;wb&#39;) as fileHandle:
+            pickle.dump(self.layers, fileHandle)
+
+    def loadWeights(self):
+        &#34;&#34;&#34;Loads the weights for this network from the appropriate pickle file (if it exists).
+
+        If the file does not exist, a FileNotFoundError is raised.
+        &#34;&#34;&#34;
+        fileName = f&#34;deeplearningnumpy/data/{self.name}.pkl&#34;
+        if not os.path.exists(fileName):
+            raise FileNotFoundError(f&#34;Weights for network &#39;{self.name}&#39; could not be loaded - have you trained your model?&#34;)
+
+        else:
+            with open(fileName, &#39;rb&#39;) as fileHandle:
+                self.layers = pickle.load(fileHandle)
+
+    def updateWeights(self, inputs, expectedOutputs, costFunction, learningRate):
+        &#34;&#34;&#34;Perform weight updates for all layers in the network.&#34;&#34;&#34;
+        self.errorGradientsSums = [None]*len(self.layers)
+
+        #Iterate over each layer, starting with the output layer
+        for i in range(len(self.layers)-1, -1, -1):
+            currentLayer = self.layers[i]
+            #Get the delta values for this layer
+            if i == len(self.layers) - 1:
+                currentLayer.getOutputDeltas(expectedOutputs, costFunction)
+            else:
+                currentLayer.getHiddenDeltas(self.layers[i+1])
+
+            #Get error gradients
+            self.errorGradientsSums[i] = (currentLayer.getErrorGradients())
+
+        #Update all network weights and biases
+        for i in range(len(self.layers)-1, -1, -1):
+            currentLayer = self.layers[i]
+            #Reshape error gradients so that they can be added to the weights
+            currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
+
+        #Make forward pass to get new network outputs that reflect updated weights
+        self.forward(inputs)
+
+    def train(self, X, y, costFunction, batchSize=None, epochs=10, learningRate = 0.1, checkGradients = False):
+        &#34;&#34;&#34;Trains the network using stochastic gradient descent.&#34;&#34;&#34;
+        #If the cost function is CCE, the final activation must be softmax
+        if not isinstance(costFunction, CategoricalCrossEntropy) and isinstance(self.layers[-1].activationFunction, ActivationSoftmax):
+            raise Exception(&#34;The Softmax function can only be used with CCE loss&#34;)
+        
+        #Get number of training examples
+        m = X.shape[0]
+
+        if not batchSize:
+            batchSize = m
+
+        startIndex = 0
+
+        for _ in range(epochs):
+            #Iterate over all batches in the training set
+            for _ in range(m // batchSize):
+                try:
+                    #Get the current batch data
+                    currentBatch = X[startIndex:startIndex + batchSize]
+                    currentLabels = y[startIndex:startIndex + batchSize]
+
+                    #Perform a forward pass using the input data
+                    self.forward(currentBatch)
+                    self.updateWeights(currentBatch, currentLabels, costFunction, learningRate)
+                    #Print cost for mini batch
+                    print(f&#34;Cost: {costFunction.getCost(self.layers[-1].outputs, currentLabels)}&#34;)
+
+                    #Numerically estimate the gradients to verify backprop implementation
+                    if checkGradients:
+                        print(f&#34;Error gradients (by backprop): {self.errorGradientsSums}&#34;)
+                        print(f&#34;Numerically estimated gradients: {self.getEstimatedGradients(currentBatch, currentLabels, costFunction)}&#34;)
+
+                    startIndex += batchSize
+
+                    if startIndex + batchSize &gt; m:
+                        startIndex = 0
+                    
+                except KeyboardInterrupt:
+                    break
+
+    def getEstimatedGradients(self, inputs, yReal, costFunction):
+        &#34;&#34;&#34;Numerically estimate the partial derivatives of the cost function w.r.t each weight&#34;&#34;&#34;
+
+        #Assemble a list of computed gradient matrices
+        estimatedGradients = [None] * len(self.layers)
+
+        #Iterate over each parameter in each layer
+        for i in range(len(self.layers)):
+            estimatedGradients[i] = np.zeros(self.layers[i].weights.shape)
+            for j in range(len(self.layers[i].weights)):
+                for k in range(len(self.layers[i].weights[j])):
+                    #A small value so that the gradient can be calculated between 2 points
+                    EPSILON = 1e-4
+                    #Copy the weights matrix so that it can be replaced once gradient checking completes
+                    weightsCopy = self.layers[i].weights.copy()
+                    self.layers[i].weights[j][k] += EPSILON
+
+                    self.forward(inputs)
+                    gradPlus = costFunction.getCost(self.layers[-1].outputs, yReal)
+                    self.layers[i].weights[j][k] -= 2 * EPSILON
+                    self.forward(inputs)
+                    gradMinus = costFunction.getCost(self.layers[-1].outputs, yReal)
+
+                    estimatedGradients[i][j][k] = (gradPlus - gradMinus) / (2 * EPSILON)
+
+                    #Re-instate original layer weights
+                    self.layers[i].weights = weightsCopy
+
+        return estimatedGradients</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork"><code class="flex name class">
+<span>class <span class="ident">NeuralNetwork</span></span>
+<span>(</span><span>name, layers)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Represents a neural network - this may be fully connected, convolutional, or some other type of network.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class NeuralNetwork:
+    &#34;&#34;&#34;Represents a neural network - this may be fully connected, convolutional, or some other type of network.&#34;&#34;&#34;
+    def __init__(self, name, layers):
+        self.name = name
+        self.layers = layers
+
+    def forward(self, inputs):
+        &#34;&#34;&#34;Performs a forward pass of the network.&#34;&#34;&#34;
+        # Initialise inputs to starting values
+        nextInputs = np.array(inputs)
+        for i in range(len(self.layers)):
+            self.layers[i].forward(nextInputs)
+            # Initialise inputs of next layer as outputs from current layer
+            nextInputs = self.layers[i].outputs
+
+    def getOutputs(self):
+        &#34;&#34;&#34;Returns the outputs from the last layer of the network.&#34;&#34;&#34;
+        return self.layers[-1].outputs
+
+    def saveWeights(self):
+        &#34;&#34;&#34;Saves the current weights for the network in a pickle file.&#34;&#34;&#34;
+        fileName = f&#34;deeplearningnumpy/data/{self.name}.pkl&#34;
+        with open(fileName, &#39;wb&#39;) as fileHandle:
+            pickle.dump(self.layers, fileHandle)
+
+    def loadWeights(self):
+        &#34;&#34;&#34;Loads the weights for this network from the appropriate pickle file (if it exists).
+
+        If the file does not exist, a FileNotFoundError is raised.
+        &#34;&#34;&#34;
+        fileName = f&#34;deeplearningnumpy/data/{self.name}.pkl&#34;
+        if not os.path.exists(fileName):
+            raise FileNotFoundError(f&#34;Weights for network &#39;{self.name}&#39; could not be loaded - have you trained your model?&#34;)
+
+        else:
+            with open(fileName, &#39;rb&#39;) as fileHandle:
+                self.layers = pickle.load(fileHandle)
+
+    def updateWeights(self, inputs, expectedOutputs, costFunction, learningRate):
+        &#34;&#34;&#34;Perform weight updates for all layers in the network.&#34;&#34;&#34;
+        self.errorGradientsSums = [None]*len(self.layers)
+
+        #Iterate over each layer, starting with the output layer
+        for i in range(len(self.layers)-1, -1, -1):
+            currentLayer = self.layers[i]
+            #Get the delta values for this layer
+            if i == len(self.layers) - 1:
+                currentLayer.getOutputDeltas(expectedOutputs, costFunction)
+            else:
+                currentLayer.getHiddenDeltas(self.layers[i+1])
+
+            #Get error gradients
+            self.errorGradientsSums[i] = (currentLayer.getErrorGradients())
+
+        #Update all network weights and biases
+        for i in range(len(self.layers)-1, -1, -1):
+            currentLayer = self.layers[i]
+            #Reshape error gradients so that they can be added to the weights
+            currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
+
+        #Make forward pass to get new network outputs that reflect updated weights
+        self.forward(inputs)
+
+    def train(self, X, y, costFunction, batchSize=None, epochs=10, learningRate = 0.1, checkGradients = False):
+        &#34;&#34;&#34;Trains the network using stochastic gradient descent.&#34;&#34;&#34;
+        #If the cost function is CCE, the final activation must be softmax
+        if not isinstance(costFunction, CategoricalCrossEntropy) and isinstance(self.layers[-1].activationFunction, ActivationSoftmax):
+            raise Exception(&#34;The Softmax function can only be used with CCE loss&#34;)
+        
+        #Get number of training examples
+        m = X.shape[0]
+
+        if not batchSize:
+            batchSize = m
+
+        startIndex = 0
+
+        for _ in range(epochs):
+            #Iterate over all batches in the training set
+            for _ in range(m // batchSize):
+                try:
+                    #Get the current batch data
+                    currentBatch = X[startIndex:startIndex + batchSize]
+                    currentLabels = y[startIndex:startIndex + batchSize]
+
+                    #Perform a forward pass using the input data
+                    self.forward(currentBatch)
+                    self.updateWeights(currentBatch, currentLabels, costFunction, learningRate)
+                    #Print cost for mini batch
+                    print(f&#34;Cost: {costFunction.getCost(self.layers[-1].outputs, currentLabels)}&#34;)
+
+                    #Numerically estimate the gradients to verify backprop implementation
+                    if checkGradients:
+                        print(f&#34;Error gradients (by backprop): {self.errorGradientsSums}&#34;)
+                        print(f&#34;Numerically estimated gradients: {self.getEstimatedGradients(currentBatch, currentLabels, costFunction)}&#34;)
+
+                    startIndex += batchSize
+
+                    if startIndex + batchSize &gt; m:
+                        startIndex = 0
+                    
+                except KeyboardInterrupt:
+                    break
+
+    def getEstimatedGradients(self, inputs, yReal, costFunction):
+        &#34;&#34;&#34;Numerically estimate the partial derivatives of the cost function w.r.t each weight&#34;&#34;&#34;
+
+        #Assemble a list of computed gradient matrices
+        estimatedGradients = [None] * len(self.layers)
+
+        #Iterate over each parameter in each layer
+        for i in range(len(self.layers)):
+            estimatedGradients[i] = np.zeros(self.layers[i].weights.shape)
+            for j in range(len(self.layers[i].weights)):
+                for k in range(len(self.layers[i].weights[j])):
+                    #A small value so that the gradient can be calculated between 2 points
+                    EPSILON = 1e-4
+                    #Copy the weights matrix so that it can be replaced once gradient checking completes
+                    weightsCopy = self.layers[i].weights.copy()
+                    self.layers[i].weights[j][k] += EPSILON
+
+                    self.forward(inputs)
+                    gradPlus = costFunction.getCost(self.layers[-1].outputs, yReal)
+                    self.layers[i].weights[j][k] -= 2 * EPSILON
+                    self.forward(inputs)
+                    gradMinus = costFunction.getCost(self.layers[-1].outputs, yReal)
+
+                    estimatedGradients[i][j][k] = (gradPlus - gradMinus) / (2 * EPSILON)
+
+                    #Re-instate original layer weights
+                    self.layers[i].weights = weightsCopy
+
+        return estimatedGradients</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, inputs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Performs a forward pass of the network.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, inputs):
+    &#34;&#34;&#34;Performs a forward pass of the network.&#34;&#34;&#34;
+    # Initialise inputs to starting values
+    nextInputs = np.array(inputs)
+    for i in range(len(self.layers)):
+        self.layers[i].forward(nextInputs)
+        # Initialise inputs of next layer as outputs from current layer
+        nextInputs = self.layers[i].outputs</code></pre>
+</details>
+</dd>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork.getEstimatedGradients"><code class="name flex">
+<span>def <span class="ident">getEstimatedGradients</span></span>(<span>self, inputs, yReal, costFunction)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Numerically estimate the partial derivatives of the cost function w.r.t each weight</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getEstimatedGradients(self, inputs, yReal, costFunction):
+    &#34;&#34;&#34;Numerically estimate the partial derivatives of the cost function w.r.t each weight&#34;&#34;&#34;
+
+    #Assemble a list of computed gradient matrices
+    estimatedGradients = [None] * len(self.layers)
+
+    #Iterate over each parameter in each layer
+    for i in range(len(self.layers)):
+        estimatedGradients[i] = np.zeros(self.layers[i].weights.shape)
+        for j in range(len(self.layers[i].weights)):
+            for k in range(len(self.layers[i].weights[j])):
+                #A small value so that the gradient can be calculated between 2 points
+                EPSILON = 1e-4
+                #Copy the weights matrix so that it can be replaced once gradient checking completes
+                weightsCopy = self.layers[i].weights.copy()
+                self.layers[i].weights[j][k] += EPSILON
+
+                self.forward(inputs)
+                gradPlus = costFunction.getCost(self.layers[-1].outputs, yReal)
+                self.layers[i].weights[j][k] -= 2 * EPSILON
+                self.forward(inputs)
+                gradMinus = costFunction.getCost(self.layers[-1].outputs, yReal)
+
+                estimatedGradients[i][j][k] = (gradPlus - gradMinus) / (2 * EPSILON)
+
+                #Re-instate original layer weights
+                self.layers[i].weights = weightsCopy
+
+    return estimatedGradients</code></pre>
+</details>
+</dd>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork.getOutputs"><code class="name flex">
+<span>def <span class="ident">getOutputs</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the outputs from the last layer of the network.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def getOutputs(self):
+    &#34;&#34;&#34;Returns the outputs from the last layer of the network.&#34;&#34;&#34;
+    return self.layers[-1].outputs</code></pre>
+</details>
+</dd>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork.loadWeights"><code class="name flex">
+<span>def <span class="ident">loadWeights</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Loads the weights for this network from the appropriate pickle file (if it exists).</p>
+<p>If the file does not exist, a FileNotFoundError is raised.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def loadWeights(self):
+    &#34;&#34;&#34;Loads the weights for this network from the appropriate pickle file (if it exists).
+
+    If the file does not exist, a FileNotFoundError is raised.
+    &#34;&#34;&#34;
+    fileName = f&#34;deeplearningnumpy/data/{self.name}.pkl&#34;
+    if not os.path.exists(fileName):
+        raise FileNotFoundError(f&#34;Weights for network &#39;{self.name}&#39; could not be loaded - have you trained your model?&#34;)
+
+    else:
+        with open(fileName, &#39;rb&#39;) as fileHandle:
+            self.layers = pickle.load(fileHandle)</code></pre>
+</details>
+</dd>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork.saveWeights"><code class="name flex">
+<span>def <span class="ident">saveWeights</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Saves the current weights for the network in a pickle file.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def saveWeights(self):
+    &#34;&#34;&#34;Saves the current weights for the network in a pickle file.&#34;&#34;&#34;
+    fileName = f&#34;deeplearningnumpy/data/{self.name}.pkl&#34;
+    with open(fileName, &#39;wb&#39;) as fileHandle:
+        pickle.dump(self.layers, fileHandle)</code></pre>
+</details>
+</dd>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork.train"><code class="name flex">
+<span>def <span class="ident">train</span></span>(<span>self, X, y, costFunction, batchSize=None, epochs=10, learningRate=0.1, checkGradients=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Trains the network using stochastic gradient descent.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def train(self, X, y, costFunction, batchSize=None, epochs=10, learningRate = 0.1, checkGradients = False):
+    &#34;&#34;&#34;Trains the network using stochastic gradient descent.&#34;&#34;&#34;
+    #If the cost function is CCE, the final activation must be softmax
+    if not isinstance(costFunction, CategoricalCrossEntropy) and isinstance(self.layers[-1].activationFunction, ActivationSoftmax):
+        raise Exception(&#34;The Softmax function can only be used with CCE loss&#34;)
+    
+    #Get number of training examples
+    m = X.shape[0]
+
+    if not batchSize:
+        batchSize = m
+
+    startIndex = 0
+
+    for _ in range(epochs):
+        #Iterate over all batches in the training set
+        for _ in range(m // batchSize):
+            try:
+                #Get the current batch data
+                currentBatch = X[startIndex:startIndex + batchSize]
+                currentLabels = y[startIndex:startIndex + batchSize]
+
+                #Perform a forward pass using the input data
+                self.forward(currentBatch)
+                self.updateWeights(currentBatch, currentLabels, costFunction, learningRate)
+                #Print cost for mini batch
+                print(f&#34;Cost: {costFunction.getCost(self.layers[-1].outputs, currentLabels)}&#34;)
+
+                #Numerically estimate the gradients to verify backprop implementation
+                if checkGradients:
+                    print(f&#34;Error gradients (by backprop): {self.errorGradientsSums}&#34;)
+                    print(f&#34;Numerically estimated gradients: {self.getEstimatedGradients(currentBatch, currentLabels, costFunction)}&#34;)
+
+                startIndex += batchSize
+
+                if startIndex + batchSize &gt; m:
+                    startIndex = 0
+                
+            except KeyboardInterrupt:
+                break</code></pre>
+</details>
+</dd>
+<dt id="deeplearningnumpy.models.neural_network.NeuralNetwork.updateWeights"><code class="name flex">
+<span>def <span class="ident">updateWeights</span></span>(<span>self, inputs, expectedOutputs, costFunction, learningRate)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Perform weight updates for all layers in the network.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def updateWeights(self, inputs, expectedOutputs, costFunction, learningRate):
+    &#34;&#34;&#34;Perform weight updates for all layers in the network.&#34;&#34;&#34;
+    self.errorGradientsSums = [None]*len(self.layers)
+
+    #Iterate over each layer, starting with the output layer
+    for i in range(len(self.layers)-1, -1, -1):
+        currentLayer = self.layers[i]
+        #Get the delta values for this layer
+        if i == len(self.layers) - 1:
+            currentLayer.getOutputDeltas(expectedOutputs, costFunction)
+        else:
+            currentLayer.getHiddenDeltas(self.layers[i+1])
+
+        #Get error gradients
+        self.errorGradientsSums[i] = (currentLayer.getErrorGradients())
+
+    #Update all network weights and biases
+    for i in range(len(self.layers)-1, -1, -1):
+        currentLayer = self.layers[i]
+        #Reshape error gradients so that they can be added to the weights
+        currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
+
+    #Make forward pass to get new network outputs that reflect updated weights
+    self.forward(inputs)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="deeplearningnumpy.models" href="index.html">deeplearningnumpy.models</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork" href="#deeplearningnumpy.models.neural_network.NeuralNetwork">NeuralNetwork</a></code></h4>
+<ul class="">
+<li><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork.forward" href="#deeplearningnumpy.models.neural_network.NeuralNetwork.forward">forward</a></code></li>
+<li><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork.getEstimatedGradients" href="#deeplearningnumpy.models.neural_network.NeuralNetwork.getEstimatedGradients">getEstimatedGradients</a></code></li>
+<li><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork.getOutputs" href="#deeplearningnumpy.models.neural_network.NeuralNetwork.getOutputs">getOutputs</a></code></li>
+<li><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork.loadWeights" href="#deeplearningnumpy.models.neural_network.NeuralNetwork.loadWeights">loadWeights</a></code></li>
+<li><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork.saveWeights" href="#deeplearningnumpy.models.neural_network.NeuralNetwork.saveWeights">saveWeights</a></code></li>
+<li><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork.train" href="#deeplearningnumpy.models.neural_network.NeuralNetwork.train">train</a></code></li>
+<li><code><a title="deeplearningnumpy.models.neural_network.NeuralNetwork.updateWeights" href="#deeplearningnumpy.models.neural_network.NeuralNetwork.updateWeights">updateWeights</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
