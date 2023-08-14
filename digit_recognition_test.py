@@ -2,10 +2,10 @@ import numpy as np
 from deeplearningnumpy.cost_functions import MSE, CategoricalCrossEntropy, BinaryCrossEntropy
 from deeplearningnumpy.activations import ActivationLeakyReLU, ActivationSoftmax, ActivationLogistic
 from deeplearningnumpy.models import NeuralNetwork
-from deeplearningnumpy.layers import DenseLayer
+from deeplearningnumpy.layers import ConvolutionalLayer, DenseLayer
 from applyDigitRecognition import loadFrontEnd
 
-BATCH_SIZE = 1000    # The number of training samples in a batch
+BATCH_SIZE = 16    # The number of training samples in a batch
 N_PIXELS = 784      # The number of pixels in a single image
 N_EPOCHS = 10       # The number of times to iterate over the training set
 LEARNING_RATE = 0.5 # How much the weights should be updated by during training
@@ -45,14 +45,20 @@ def oneHotEncoding(n):
 imageData, labelData = loadMnistTraining()
 
 #Define network layers
+'''
 layer1 = DenseLayer(N_PIXELS, 1024, ActivationLeakyReLU(0.20))
 layer2 = DenseLayer(1024, 256, ActivationLeakyReLU(0.20))
 layer3 = DenseLayer(256, 64, ActivationLeakyReLU(0.20))
-layer4 = DenseLayer(64, 10, ActivationLogistic())
+layer4 = DenseLayer(64, 10, ActivationSoftmax())
 layers = [layer1, layer2, layer3, layer4]
+'''
+layers = [ ConvolutionalLayer(32, 3, 1, ActivationLeakyReLU(0.20))
+         , ConvolutionalLayer(32, 3, 32, ActivationLeakyReLU(0.20))
+         , DenseLayer(32 * 24**2, 10, ActivationSoftmax())
+]
 
 # We use categorical cross entropy as we are trying to categorise samples into more than 2 categories
-costFunction = MSE()
+costFunction = CategoricalCrossEntropy()
 
 #Create new network
 digitNetwork = NeuralNetwork("testNetwork", layers)
@@ -63,7 +69,7 @@ testImages, testLabels = loadMnistTesting()
 try:
     digitNetwork.loadWeights()
 except FileNotFoundError:
-    digitNetwork.train(imageData, labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, False, testImages, testLabels)
+    digitNetwork.train(imageData.reshape(-1, 1, 28, 28), labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, False, testImages.reshape(-1, 1, 28, 28), testLabels)
     digitNetwork.saveWeights()
 
 # Evaluate accuracy on test set

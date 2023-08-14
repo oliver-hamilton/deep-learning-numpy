@@ -8,7 +8,7 @@ class Layer:
         self.weights = np.subtract(self.weights, learningRate * gradientSums)
         # Sum the output deltas for each data item in the batch
         accumulatedDeltas = np.reshape(np.sum(self.outputDeltas, axis=0), (1, -1))
-        self.biases = np.subtract(self.biases, learningRate * accumulatedDeltas)
+        # self.biases = np.subtract(self.biases, learningRate * accumulatedDeltas)
 
     def getOutputDeltas(self, expectedValues, costFunction):
         """Calculates delta values for each neuron in the output layer."""
@@ -31,6 +31,8 @@ class DenseLayer(Layer):
         """Calculates the weighted sum of the inputs and stores the result
         after applying the activation function as the output of the layer.
         """
+        if inputs.ndim > 2:
+            inputs = inputs.reshape(-1, np.product(inputs.shape) // inputs.shape[0])
         self.inputs = inputs
         #Calculate weighted sum
         self.weightedSum = np.matmul(inputs, self.weights) + self.biases
@@ -59,17 +61,19 @@ class ConvolutionalLayer(Layer):
     def __init__(self, nOfFilters, filterSize, previousNOfFilters, activationFunction, stride=1):
         super().__init__()
         self.nOfFilters = nOfFilters
-        self.activation = activationFunction
-
-        # Randomly initialise filters of layer
-        self.weights = 0.025 * np.random.randn(nOfFilters, previousNOfFilters, filterSize, filterSize)
-        # Biases are initialised as zeros
-        self.biases = np.zeros((nOfFilters), dtype=np.float32)
+        self.filterSize = filterSize
+        self.previousNOfFilters = previousNOfFilters
+        self.activationFunction = activationFunction
         self.stride = stride
 
-        #Get the size of the filter
-        (_, _, filterSize, _) = self.weights.shape
-        self.windowSize = filterSize
+        # Randomly initialise filters of layer with He initialisation
+        self.weights = np.random.randn(nOfFilters, previousNOfFilters, filterSize, filterSize) * (2.0 / (previousNOfFilters * filterSize ** 2))**0.5
+        # Biases are initialised as zeros
+        self.biases = np.zeros((nOfFilters), dtype=np.float32)
+
+        # Get the size of the filter
+        # (_, _, filterSize, _) = self.weights.shape
+        # self.windowSize = filterSize
 
     def forward(self, inputs):
         """Performs the convolution and stores the result after applying
@@ -77,10 +81,10 @@ class ConvolutionalLayer(Layer):
         """
         self.inputs = inputs
         #Perform a convolution
-        self.convolutionOutputs = self.convolution(inputs, self.filters, self.biases)
+        self.convolutionOutputs = self.convolution(inputs, self.weights, self.stride, self.biases)
 
         #Get the output of the activation function
-        self.outputs = self.activation.forward(self.convolutionOutputs)
+        self.outputs = self.activationFunction.forward(self.convolutionOutputs)
 
     def convolution(self, images, filters, stride, biases=None):
         """Performs a convolution of a set of filters over a set of images with a given stride and set of biases."""
@@ -92,7 +96,7 @@ class ConvolutionalLayer(Layer):
         # Filter depth must match image depth for convolution to be defined.
         assert filterDepth == imageDepth
 
-        if not biases:
+        if type(biases) is not np.ndarray and biases == None:
             biases = np.zeros((nFilters))
 
         outImageSize = (imageSize - filterSize) // stride + 1
@@ -104,48 +108,63 @@ class ConvolutionalLayer(Layer):
                 for outRow, maskedRow in enumerate(range(0, imageSize - filterSize + 1, stride)):
                     for outCol, maskedColumn in enumerate(range(0, imageSize - filterSize + 1, stride)):
                         maskedImage = images[imageIndex, :, maskedRow:maskedRow+filterSize, maskedColumn:maskedColumn+filterSize]
-                        res = np.sum(np.multiply(maskedImage, currentFilter)) + np.tensordot(biases, np.ones(outImageSize, outImageSize))
+                        res = np.sum(np.multiply(maskedImage, currentFilter)) # + np.tensordot(biases, np.ones((outImageSize, outImageSize)))
                         out[imageIndex, filterIndex, outRow, outCol] = res
-
+        for i, bias in enumerate(biases):
+            out[:, i, :, :] += bias * np.ones((outImageSize, outImageSize))
         return out
 
     def getHiddenDeltas(self, nextLayer):
         """Calculates delta values for each neuron, assuming that this is a hidden layer
         (i.e. not the output layer).
         """
-        activationDerivative = self.activation.getDerivative(self.convolutionOutputs)
+        activationDerivative = self.activationFunction.getDerivative(self.convolutionOutputs)
         if isinstance(nextLayer, DenseLayer):
-            errorSize = np.dot(nextLayer.outputDeltas, nextLayer.weights.T)  
+            errorSize = np.matmul(nextLayer.outputDeltas, nextLayer.weights.T)  
             #Reshape error to match convolutional layer
             errorSize = np.reshape(errorSize, activationDerivative.shape)
             #Get the derivative of the error with respect to the output before activation
-            outputDerivative = np.multiply(errorSize, activationDerivative)
-
+            #outputDerivative = np.multiply(errorSize, activationDerivative)
         else:
-            outputDerivative = np.multiply(nextLayer.outputDeltas, activationDerivative)
+        # outputDerivative = np.multiply(errorSize, activationDerivative)
+            dilatedDerivative = np.zeros((nextLayer.outputDeltas.shape[0], 
+            nextLayer.outputDeltas.shape[1], 
+            nextLayer.outputDeltas.shape[2] + (nextLayer.outputDeltas.shape[2] - 1) * (nextLayer.stride - 1), 
+            nextLayer.outputDeltas.shape[3] + (nextLayer.outputDeltas.shape[3] - 1) * (nextLayer.stride - 1)), 
+            dtype=np.float32)
 
-        dilatedDerivative = np.zeros((outputDerivative.shape[0], 
-        outputDerivative.shape[1], 
-        outputDerivative.shape[2] + (outputDerivative.shape[2] - 1) * (self.stride - 1), 
-        outputDerivative.shape[3] + (outputDerivative.shape[3] - 1) * (self.stride - 1)), 
-        dtype=np.float32)
+            dilatedDerivative[:,:,::nextLayer.stride,::nextLayer.stride] = nextLayer.outputDeltas
 
-        dilatedDerivative[:,:,::self.stride,::self.stride] = outputDerivative
+            #The error gradient of the filter is the convolution of the dilated output derivative over the inputs
+            #self.filterErrorGradient = self.convolution(self.inputs, dilatedDerivative, 1)
 
-        #The error gradient of the filter is the convolution of the dilated output derivative over the inputs
-        self.filterErrorGradient = self.convolution(self.inputs, dilatedDerivative, 1)
+            #Rotate filters by 180 degrees
+            temp = np.rot90(nextLayer.weights, axes=(-1,-2))
+            rotatedFilters = np.rot90(temp, axes=(-1,-2))
 
-        #Rotate filters by 180 degrees
-        temp = np.rot90(self.weights, axes=(-1,-2))
-        rotatedFilters = np.rot90(temp, axes=(-1,-2))
-
-        #Pad the dilated output derivative
-        paddedDerivative = np.pad(dilatedDerivative, ((0,0), (0,0), (rotatedFilters.shape[2] - 1, rotatedFilters.shape[2] - 1), (rotatedFilters.shape[2] - 1, rotatedFilters.shape[2] - 1)), 'constant', constant_values=(0))
-        self.outputDeltas = self.convolution(paddedDerivative, rotatedFilters, 1)
+            #Pad the dilated output derivative
+            paddedDerivative = np.pad(dilatedDerivative, ((0,0), (0,0), (rotatedFilters.shape[2] - 1, rotatedFilters.shape[2] - 1), (rotatedFilters.shape[2] - 1, rotatedFilters.shape[2] - 1)), 'constant', constant_values=(0))
+            errorSize = self.convolution(paddedDerivative, rotatedFilters, 1)
+    
+        self.outputDeltas = np.multiply(errorSize, activationDerivative)
     
     def getErrorGradients(self):
         """Returns the convolution of the dilated output derivative over the inputs."""
-        return self.filterErrorGradient
+        dilatedDerivative = np.zeros((self.outputDeltas.shape[0], 
+        self.outputDeltas.shape[1], 
+        self.outputDeltas.shape[2] + (self.outputDeltas.shape[2] - 1) * (self.stride - 1), 
+        self.outputDeltas.shape[3] + (self.outputDeltas.shape[3] - 1) * (self.stride - 1)), 
+        dtype=np.float32)
+
+        dilatedDerivative[:,:,::self.stride,::self.stride] = self.outputDeltas
+
+        dilatedDerivative = dilatedDerivative.reshape(-1, dilatedDerivative.shape[0], dilatedDerivative.shape[2], dilatedDerivative.shape[3])
+
+        reshapedInputs = self.inputs.reshape(-1, self.inputs.shape[0], self.inputs.shape[2], self.inputs.shape[3])
+        #The error gradient of the filter is the convolution of the dilated output derivative over the inputs
+        #self.filterErrorGradient = self.convolution(self.inputs, dilatedDerivative, 1)
+        return self.convolution(reshapedInputs, dilatedDerivative, 1)
+
     
 class MaxPoolLayer(Layer):
     def __init__(self, windowSize, stride):
