@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: deeplearningnumpy
+Version: 1.0.0
+Summary: Deep learning package
+Author: oliver-hamilton (Oliver Hamilton)
+Author-email: <ohamilton0079@gmail.com>
+Keywords: python,deep learning,neural network,convolutional,fully connected
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+License-File: LICENSE
+
+A package that allows for the training and evaluation on inputs of convolutional and fully connected neural networks.

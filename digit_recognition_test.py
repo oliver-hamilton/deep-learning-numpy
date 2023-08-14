@@ -1,14 +1,14 @@
 import numpy as np
-from deeplearningnumpy.cost_functions import CategoricalCrossEntropy, BinaryCrossEntropy
+from deeplearningnumpy.cost_functions import MSE, CategoricalCrossEntropy, BinaryCrossEntropy
 from deeplearningnumpy.activations import ActivationLeakyReLU, ActivationSoftmax, ActivationLogistic
 from deeplearningnumpy.models import NeuralNetwork
 from deeplearningnumpy.layers import DenseLayer
 from applyDigitRecognition import loadFrontEnd
 
-BATCH_SIZE = 10000    # The number of training samples in a batch
+BATCH_SIZE = 1000    # The number of training samples in a batch
 N_PIXELS = 784      # The number of pixels in a single image
-N_EPOCHS = 20       # The number of times to iterate over the training set
-LEARNING_RATE = 0.1 # How much the weights should be updated by during training
+N_EPOCHS = 10       # The number of times to iterate over the training set
+LEARNING_RATE = 0.5 # How much the weights should be updated by during training
 
 def loadMnist(fileNamePrefix):
     """Loads images and labels for MNIST."""
@@ -48,24 +48,26 @@ imageData, labelData = loadMnistTraining()
 layer1 = DenseLayer(N_PIXELS, 1024, ActivationLeakyReLU(0.20))
 layer2 = DenseLayer(1024, 256, ActivationLeakyReLU(0.20))
 layer3 = DenseLayer(256, 64, ActivationLeakyReLU(0.20))
-layer4 = DenseLayer(64, 10, ActivationSoftmax())
+layer4 = DenseLayer(64, 10, ActivationLogistic())
 layers = [layer1, layer2, layer3, layer4]
 
 # We use categorical cross entropy as we are trying to categorise samples into more than 2 categories
-costFunction = CategoricalCrossEntropy()
+costFunction = MSE()
 
 #Create new network
 digitNetwork = NeuralNetwork("testNetwork", layers)
+
+testImages, testLabels = loadMnistTesting()
 
 #Load previous weights, or generate them if they don't exist
 try:
     digitNetwork.loadWeights()
 except FileNotFoundError:
-    digitNetwork.train(imageData, labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, False)
+    digitNetwork.train(imageData, labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, False, testImages, testLabels)
     digitNetwork.saveWeights()
 
 # Evaluate accuracy on test set
-testImages, testLabels = loadMnistTesting()
+'''
 digitNetwork.forward(testImages)
 testOutputs = np.argmax(digitNetwork.getOutputs(), -1)
 matchingCount = 0
@@ -74,6 +76,6 @@ for i in range(testOutputs.size):
         matchingCount += 1
 
 print("Accuracy on test set: {}%".format((matchingCount / testOutputs.size) * 100))
-
+'''
 # Load the GUI application to interact with the network
 loadFrontEnd(digitNetwork)

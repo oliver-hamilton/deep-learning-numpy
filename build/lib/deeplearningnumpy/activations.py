@@ -71,14 +71,3 @@ class ActivationLogistic:
         """Gets the derivative of the activation function w.r.t the inputs."""
         logistic = self.forward(inputs)
         return logistic * (1 - logistic)
-    
-class ActivationTanh:
-    """Tanh activation function.
-    The derivative is sech^2(x) = 1 - tanh^2(x)
-    """
-    def forward(self, inputs):
-        return (np.exp(inputs) - np.exp(-1 * inputs)) / (np.exp(inputs) + np.exp(-1 * inputs))
-
-    def getDerivative(self, inputs):
-        tanh = self.forward(inputs)
-        return 1 - tanh**2
