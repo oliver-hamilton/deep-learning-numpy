@@ -5,10 +5,10 @@ from deeplearningnumpy.models import NeuralNetwork
 from deeplearningnumpy.layers import ConvolutionalLayer, DenseLayer
 from applyDigitRecognition import loadFrontEnd
 
-BATCH_SIZE = 16    # The number of training samples in a batch
+BATCH_SIZE = 32    # The number of training samples in a batch
 N_PIXELS = 784      # The number of pixels in a single image
 N_EPOCHS = 10       # The number of times to iterate over the training set
-LEARNING_RATE = 0.5 # How much the weights should be updated by during training
+LEARNING_RATE = 0.05 # How much the weights should be updated by during training
 
 def loadMnist(fileNamePrefix):
     """Loads images and labels for MNIST."""
@@ -52,13 +52,13 @@ layer3 = DenseLayer(256, 64, ActivationLeakyReLU(0.20))
 layer4 = DenseLayer(64, 10, ActivationSoftmax())
 layers = [layer1, layer2, layer3, layer4]
 '''
-layers = [ ConvolutionalLayer(32, 3, 1, ActivationLeakyReLU(0.20))
-         , ConvolutionalLayer(32, 3, 32, ActivationLeakyReLU(0.20))
-         , DenseLayer(32 * 24**2, 10, ActivationSoftmax())
+layers = [ ConvolutionalLayer(16, 4, 1, ActivationLeakyReLU(0.20), 2)
+         , ConvolutionalLayer(32, 3, 16, ActivationLeakyReLU(0.20), 2)
+         , DenseLayer(32 * 6**2, 10, ActivationLogistic())
 ]
 
 # We use categorical cross entropy as we are trying to categorise samples into more than 2 categories
-costFunction = CategoricalCrossEntropy()
+costFunction = MSE()
 
 #Create new network
 digitNetwork = NeuralNetwork("testNetwork", layers)

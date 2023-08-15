@@ -101,6 +101,7 @@ class NeuralNetwork:
                         print(f"Numerically estimated gradients: {self.getEstimatedGradients(currentBatch, currentLabels, costFunction)}")
 
                     # Evaluate accuracy on test set
+                    '''
                     if testImages != [] and testLabels != []:
                         self.forward(testImages)
                         testOutputs = np.argmax(self.getOutputs(), -1)
@@ -110,7 +111,7 @@ class NeuralNetwork:
                                 matchingCount += 1
 
                         print("Accuracy on test set: {}%".format((matchingCount / testOutputs.size) * 100))
-
+                    '''
                     startIndex += batchSize
 
                     if startIndex + batchSize > m:

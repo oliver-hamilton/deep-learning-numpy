@@ -80,12 +80,17 @@ class ConvolutionalLayer(Layer):
         the activation function as the output of the layer.
         """
         self.inputs = inputs
-        #Perform a convolution
-        self.convolutionOutputs = self.convolution(inputs, self.weights, self.stride, self.biases)
+        newImageSize = (inputs.shape[-1] - self.filterSize) // self.stride + 1
+        self.convolutionOutputs = np.zeros((inputs.shape[0], self.nOfFilters, newImageSize, newImageSize), dtype=np.float32)
+        #Perform the cross-correlation operation for each input and filter
+        for i, input in enumerate(inputs):
+            for j, filter in enumerate(self.weights):
+                self.convolutionOutputs[i, j] = self.crossCorrelate(input, filter, self.stride, self.biases)
 
         #Get the output of the activation function
         self.outputs = self.activationFunction.forward(self.convolutionOutputs)
 
+    '''
     def convolution(self, images, filters, stride, biases=None):
         """Performs a convolution of a set of filters over a set of images with a given stride and set of biases."""
         nFilters, filterDepth, filterSize, _ = filters.shape
@@ -113,6 +118,30 @@ class ConvolutionalLayer(Layer):
         for i, bias in enumerate(biases):
             out[:, i, :, :] += bias * np.ones((outImageSize, outImageSize))
         return out
+    '''
+    def crossCorrelate(self, image, filter, stride, biases = None):
+        if image.ndim < 3:
+            image = np.expand_dims(image, 0)
+        imageDepth, imageSize, _ = image.shape
+        if filter.ndim < 3:
+            filter = np.expand_dims(filter, 0)
+        filterDepth, filterSize, _ = filter.shape
+
+        # Filter must should not go outside image bounds when moved by stride distance.
+        assert ((imageSize - filterSize) / stride) % 1 == 0
+        # Filter depth must match image depth for convolution to be defined.
+        assert filterDepth == imageDepth
+
+        outImageSize = (imageSize - filterSize) // stride + 1
+        out = np.zeros((outImageSize, outImageSize))
+        for outRow, maskedRow in enumerate(range(0, imageSize - filterSize + 1, stride)):
+            for outCol, maskedColumn in enumerate(range(0, imageSize - filterSize + 1, stride)):
+                maskedImage = image[:, maskedRow:maskedRow+filterSize, maskedColumn:maskedColumn+filterSize]
+                res = np.sum(np.multiply(maskedImage, filter)) # + np.tensordot(biases, np.ones((outImageSize, outImageSize)))
+                out[outRow, outCol] = res
+
+        return out
+
 
     def getHiddenDeltas(self, nextLayer):
         """Calculates delta values for each neuron, assuming that this is a hidden layer
@@ -143,8 +172,14 @@ class ConvolutionalLayer(Layer):
             rotatedFilters = np.rot90(temp, axes=(-1,-2))
 
             #Pad the dilated output derivative
-            paddedDerivative = np.pad(dilatedDerivative, ((0,0), (0,0), (rotatedFilters.shape[2] - 1, rotatedFilters.shape[2] - 1), (rotatedFilters.shape[2] - 1, rotatedFilters.shape[2] - 1)), 'constant', constant_values=(0))
-            errorSize = self.convolution(paddedDerivative, rotatedFilters, 1)
+            paddedDerivative = np.pad(dilatedDerivative, ((0,0), (0,0), (rotatedFilters.shape[-2] - 1, rotatedFilters.shape[-2] - 1), (rotatedFilters.shape[-1] - 1, rotatedFilters.shape[-1] - 1)), 'constant', constant_values=(0))
+            errorSize = np.zeros(self.convolutionOutputs.shape)
+            for k in range(self.inputs.shape[0]):
+                for j in range(self.nOfFilters):
+                    errorSize[k, j] = sum([self.crossCorrelate(paddedDerivative[k, i], rotatedFilters[i, j], 1) for i in range(self.nOfFilters)])
+
+            
+            #errorSize = self.crossCorrelate(paddedDerivative, rotatedFilters, 1)
     
         self.outputDeltas = np.multiply(errorSize, activationDerivative)
     
@@ -158,13 +193,19 @@ class ConvolutionalLayer(Layer):
 
         dilatedDerivative[:,:,::self.stride,::self.stride] = self.outputDeltas
 
-        dilatedDerivative = dilatedDerivative.reshape(-1, dilatedDerivative.shape[0], dilatedDerivative.shape[2], dilatedDerivative.shape[3])
+        #dilatedDerivative = dilatedDerivative.reshape(-1, dilatedDerivative.shape[0], dilatedDerivative.shape[2], dilatedDerivative.shape[3])
 
-        reshapedInputs = self.inputs.reshape(-1, self.inputs.shape[0], self.inputs.shape[2], self.inputs.shape[3])
+        #reshapedInputs = self.inputs.reshape(-1, self.inputs.shape[0], self.inputs.shape[2], self.inputs.shape[3])
         #The error gradient of the filter is the convolution of the dilated output derivative over the inputs
         #self.filterErrorGradient = self.convolution(self.inputs, dilatedDerivative, 1)
-        return self.convolution(reshapedInputs, dilatedDerivative, 1)
+        filterErrorGradient = np.zeros(self.weights.shape)
+        for i in range(self.nOfFilters):
+            for j in range(self.previousNOfFilters):
+                #for i in range(self.nOfFilters):
+                filterErrorGradient[i][j] = sum([self.crossCorrelate(self.inputs[k, j], dilatedDerivative[k, i], 1) for k in range(self.inputs.shape[0])])
 
+        #return self.convolution(reshapedInputs, dilatedDerivative, 1)
+        return filterErrorGradient
     
 class MaxPoolLayer(Layer):
     def __init__(self, windowSize, stride):
