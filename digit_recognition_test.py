@@ -2,7 +2,7 @@ import numpy as np
 from deeplearningnumpy.cost_functions import MSE, CategoricalCrossEntropy, BinaryCrossEntropy
 from deeplearningnumpy.activations import ActivationLeakyReLU, ActivationSoftmax, ActivationLogistic
 from deeplearningnumpy.models import NeuralNetwork
-from deeplearningnumpy.layers import ConvolutionalLayer, DenseLayer
+from deeplearningnumpy.layers import ConvolutionalLayer, DenseLayer, MaxPoolLayer
 from applyDigitRecognition import loadFrontEnd
 
 BATCH_SIZE = 8    # The number of training samples in a batch
@@ -54,7 +54,8 @@ layers = [layer1, layer2, layer3, layer4]
 '''
 layers = [ ConvolutionalLayer(16, 4, 1, ActivationLeakyReLU(0.20), 2)
          , ConvolutionalLayer(32, 3, 16, ActivationLeakyReLU(0.20), 2)
-         , DenseLayer(32 * 6**2, 10, ActivationLogistic())
+         , MaxPoolLayer(2, 2)
+         , DenseLayer(32 * 3**2, 10, ActivationLogistic())
 ]
 
 # We use categorical cross entropy as we are trying to categorise samples into more than 2 categories

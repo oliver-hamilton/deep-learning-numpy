@@ -129,7 +129,7 @@ class NeuralNetwork:
         estimatedGradients = [None] * len(self.layers)
 
         #Iterate over each parameter in each layer
-        for i in range(len(self.layers) - 2, -1, -1):
+        for i in range(len(self.layers)):
             flattenedWeights = self.layers[i].weights.reshape(-1)
             estimatedGradients[i] = np.zeros(flattenedWeights.size)
             for j in range(flattenedWeights.size):

@@ -143,6 +143,7 @@ class MaxPoolLayer(Layer):
         self.weights = np.zeros((1))
         self.windowSize = windowSize
         self.stride = stride
+        self.errorGradients = None
 
     def forward(self, inputs):
         """Performs max pooling to generate the layer's output."""
@@ -154,7 +155,7 @@ class MaxPoolLayer(Layer):
         (batchSize, depth, imageSize, _) = images.shape
 
         #Get size of output tensor
-        outputSize = int(np.floor((imageSize - self.windowSize) / self.stride)) + 1
+        outputSize = (imageSize - self.windowSize) // self.stride + 1
 
         #Create order 3 tensor to store output of max pooling
         out = np.zeros((batchSize, depth, outputSize, outputSize), dtype=np.float32)
@@ -182,11 +183,12 @@ class MaxPoolLayer(Layer):
         #Return the output matrix
         return out
 
-    def getHiddenDeltas(self, nextLayer):
+    def getDeltas(self, outputDeltas):
         """Calculates delta values, assuming that this is a hidden layer.
         Even though this layer has no weights, we still need to propagate derivatives
         backwards from subsequent layers.
         """
+        '''
         if isinstance(nextLayer, DenseLayer):
             #Get the rate of change of the error with respect to the output
             errorSize = np.dot(nextLayer.outputDeltas, nextLayer.weights.T)
@@ -196,20 +198,22 @@ class MaxPoolLayer(Layer):
 
         else:
             errorSize = np.multiply(nextLayer.outputDeltas, np.ones(self.outputs.shape))
-
+        '''
         (batchSize, depth, imageSize, _) = self.inputs.shape
 
         #Get size of output tensor
-        outputSize = self.inputs.shape[3]
+        outputSize = (imageSize - self.windowSize) // self.stride + 1
 
         #Create rank 4 tensor to store output of max pooling
-        out = np.zeros((batchSize, depth, outputSize, outputSize), dtype=np.float32)
+        out = np.zeros((batchSize, depth, imageSize, imageSize), dtype=np.float32)
 
         #Move window vertically across image
-        currentRow = 0
+
+        reshapedOutputDeltas = outputDeltas.reshape((batchSize, depth, outputSize, outputSize))
 
         for batchItem in range(batchSize):
             for d in range(depth):
+                currentRow = 0
                 while currentRow < imageSize - self.windowSize:
                     #Move window horizontally across image
                     currentCol = 0
@@ -222,7 +226,7 @@ class MaxPoolLayer(Layer):
                         #print(subMatrix.reshape(self.windowSize*self.windowSize))
                         flattenedIndices = np.argmax(subMatrix.reshape(self.windowSize*self.windowSize))
 
-                        out[batchItem, d, currentRow + (flattenedIndices // self.windowSize), currentCol + (flattenedIndices % self.windowSize)] = errorSize[batchItem, d, (currentRow // self.stride), (currentCol // self.stride)]
+                        out[batchItem, d, currentRow + (flattenedIndices // self.windowSize), currentCol + (flattenedIndices % self.windowSize)] = reshapedOutputDeltas[batchItem, d, (currentRow // self.stride), (currentCol // self.stride)]
 
                         #Move section being considered to right by stride length
                         currentCol += self.stride
@@ -231,12 +235,4 @@ class MaxPoolLayer(Layer):
                     currentRow += self.stride
         
         #Define output deltas
-        self.outputDeltas = out
-
-    def getErrorGradients(self):
-        """There are no error gradients to return."""
-        return None
-
-    def updateWeights(self, gradientSums, learningRate):
-        """A pooling layer has no weights to update, so calling this method has no effect."""
-        pass
+        self.inputDeltas = out
