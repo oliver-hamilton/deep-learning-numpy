@@ -52,8 +52,9 @@ class NeuralNetwork:
             #Get the delta values for this layer
             if i == len(self.layers) - 1:
                 currentLayer.getOutputDeltas(expectedOutputs, costFunction)
+                currentLayer.getDeltas(currentLayer.outputDeltas)
             else:
-                currentLayer.getHiddenDeltas(self.layers[i+1])
+                currentLayer.getDeltas(self.layers[i+1].inputDeltas)
 
             #Get error gradients
             self.errorGradientsSums[i] = (currentLayer.getErrorGradients())
@@ -128,7 +129,7 @@ class NeuralNetwork:
         estimatedGradients = [None] * len(self.layers)
 
         #Iterate over each parameter in each layer
-        for i in range(len(self.layers)):
+        for i in range(len(self.layers) - 2, -1, -1):
             flattenedWeights = self.layers[i].weights.reshape(-1)
             estimatedGradients[i] = np.zeros(flattenedWeights.size)
             for j in range(flattenedWeights.size):
