@@ -5,7 +5,7 @@ from deeplearningnumpy.models import NeuralNetwork
 from deeplearningnumpy.layers import ConvolutionalLayer, DenseLayer
 from applyDigitRecognition import loadFrontEnd
 
-BATCH_SIZE = 32    # The number of training samples in a batch
+BATCH_SIZE = 8    # The number of training samples in a batch
 N_PIXELS = 784      # The number of pixels in a single image
 N_EPOCHS = 10       # The number of times to iterate over the training set
 LEARNING_RATE = 0.05 # How much the weights should be updated by during training
@@ -69,7 +69,7 @@ testImages, testLabels = loadMnistTesting()
 try:
     digitNetwork.loadWeights()
 except FileNotFoundError:
-    digitNetwork.train(imageData.reshape(-1, 1, 28, 28), labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, False, testImages.reshape(-1, 1, 28, 28), testLabels)
+    digitNetwork.train(imageData.reshape(-1, 1, 28, 28), labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, True, testImages.reshape(-1, 1, 28, 28), testLabels)
     digitNetwork.saveWeights()
 
 # Evaluate accuracy on test set

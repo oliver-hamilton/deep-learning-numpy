@@ -133,7 +133,7 @@ class ConvolutionalLayer(Layer):
         assert filterDepth == imageDepth
 
         outImageSize = (imageSize - filterSize) // stride + 1
-        out = np.zeros((outImageSize, outImageSize))
+        out = np.zeros((outImageSize, outImageSize), dtype=np.float32)
         for outRow, maskedRow in enumerate(range(0, imageSize - filterSize + 1, stride)):
             for outCol, maskedColumn in enumerate(range(0, imageSize - filterSize + 1, stride)):
                 maskedImage = image[:, maskedRow:maskedRow+filterSize, maskedColumn:maskedColumn+filterSize]
@@ -168,15 +168,14 @@ class ConvolutionalLayer(Layer):
             #self.filterErrorGradient = self.convolution(self.inputs, dilatedDerivative, 1)
 
             #Rotate filters by 180 degrees
-            temp = np.rot90(nextLayer.weights, axes=(-1,-2))
-            rotatedFilters = np.rot90(temp, axes=(-1,-2))
+            rotatedFilters = np.rot90(nextLayer.weights, k = 2, axes=(-1,-2))
 
             #Pad the dilated output derivative
             paddedDerivative = np.pad(dilatedDerivative, ((0,0), (0,0), (rotatedFilters.shape[-2] - 1, rotatedFilters.shape[-2] - 1), (rotatedFilters.shape[-1] - 1, rotatedFilters.shape[-1] - 1)), 'constant', constant_values=(0))
-            errorSize = np.zeros(self.convolutionOutputs.shape)
+            errorSize = np.zeros(self.convolutionOutputs.shape, dtype=np.float32)
             for k in range(self.inputs.shape[0]):
                 for j in range(self.nOfFilters):
-                    errorSize[k, j] = sum([self.crossCorrelate(paddedDerivative[k, i], rotatedFilters[i, j], 1) for i in range(self.nOfFilters)])
+                    errorSize[k, j] = sum([self.crossCorrelate(paddedDerivative[k, i], rotatedFilters[i, j], 1) for i in range(nextLayer.nOfFilters)])
 
             
             #errorSize = self.crossCorrelate(paddedDerivative, rotatedFilters, 1)
@@ -198,7 +197,7 @@ class ConvolutionalLayer(Layer):
         #reshapedInputs = self.inputs.reshape(-1, self.inputs.shape[0], self.inputs.shape[2], self.inputs.shape[3])
         #The error gradient of the filter is the convolution of the dilated output derivative over the inputs
         #self.filterErrorGradient = self.convolution(self.inputs, dilatedDerivative, 1)
-        filterErrorGradient = np.zeros(self.weights.shape)
+        filterErrorGradient = np.zeros(self.weights.shape, dtype=np.float32)
         for i in range(self.nOfFilters):
             for j in range(self.previousNOfFilters):
                 #for i in range(self.nOfFilters):

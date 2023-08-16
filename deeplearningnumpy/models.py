@@ -62,7 +62,8 @@ class NeuralNetwork:
         for i in range(len(self.layers)-1, -1, -1):
             currentLayer = self.layers[i]
             #Reshape error gradients so that they can be added to the weights
-            currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
+            #TODO: Add back in
+            # currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
 
         #Make forward pass to get new network outputs that reflect updated weights
         self.forward(inputs)
@@ -128,24 +129,25 @@ class NeuralNetwork:
 
         #Iterate over each parameter in each layer
         for i in range(len(self.layers)):
-            estimatedGradients[i] = np.zeros(self.layers[i].weights.shape)
-            for j in range(len(self.layers[i].weights)):
-                for k in range(len(self.layers[i].weights[j])):
-                    #A small value so that the gradient can be calculated between 2 points
-                    EPSILON = 1e-4
-                    #Copy the weights matrix so that it can be replaced once gradient checking completes
-                    weightsCopy = self.layers[i].weights.copy()
-                    self.layers[i].weights[j][k] += EPSILON
+            flattenedWeights = self.layers[i].weights.reshape(-1)
+            estimatedGradients[i] = np.zeros(flattenedWeights.size)
+            for j in range(flattenedWeights.size):
+                #A small value so that the gradient can be calculated between 2 points
+                EPSILON = 1e-4
+                #Copy the weights matrix so that it can be replaced once gradient checking completes
+                weightsCopy = self.layers[i].weights.copy()
+                flattenedWeights[j] += EPSILON
 
-                    self.forward(inputs)
-                    gradPlus = costFunction.getCost(self.layers[-1].outputs, yReal)
-                    self.layers[i].weights[j][k] -= 2 * EPSILON
-                    self.forward(inputs)
-                    gradMinus = costFunction.getCost(self.layers[-1].outputs, yReal)
+                self.forward(inputs)
+                gradPlus = costFunction.getCost(self.layers[-1].outputs, yReal)
+                flattenedWeights[j] -= 2 * EPSILON
+                self.forward(inputs)
+                gradMinus = costFunction.getCost(self.layers[-1].outputs, yReal)
 
-                    estimatedGradients[i][j][k] = (gradPlus - gradMinus) / (2 * EPSILON)
+                estimatedGradients[i][j] = (gradPlus - gradMinus) / (2 * EPSILON)
 
-                    #Re-instate original layer weights
-                    self.layers[i].weights = weightsCopy
+                #Re-instate original layer weights
+                self.layers[i].weights = weightsCopy
+                flattenedWeights = self.layers[i].weights.reshape(-1)
 
         return estimatedGradients
