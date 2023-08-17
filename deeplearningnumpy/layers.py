@@ -5,10 +5,12 @@ class Layer:
 
     def updateWeights(self, gradientSums, learningRate):
         """Updates the weights according to the accumulated gradients and the learning rate."""
-        self.weights = np.subtract(self.weights, learningRate * gradientSums)
-        # Sum the output deltas for each data item in the batch
-        accumulatedDeltas = np.reshape(np.sum(self.outputDeltas, axis=0), (1, -1))
-        # self.biases = np.subtract(self.biases, learningRate * accumulatedDeltas)
+        if type(self.weights) == np.ndarray:
+            self.weights = np.subtract(self.weights, learningRate * gradientSums)
+            # Sum the output deltas for each data item in the batch
+            # accumulatedDeltas = np.reshape(np.sum(self.outputDeltas, axis=0), (1, -1))
+            self.biases = np.subtract(self.biases, learningRate * self.biasGradients)
+        pass
 
     def getOutputDeltas(self, expectedValues, costFunction):
         """Calculates delta values for each neuron in the output layer."""
@@ -52,8 +54,11 @@ class DenseLayer(Layer):
 
         self.errorGradients = np.matmul(weightedSumDerivative.T, self.inputs).T
 
+        self.biasGradients = np.sum(weightedSumDerivative, axis=0)
+
+
 class ConvolutionalLayer(Layer):
-    def __init__(self, nOfFilters, filterSize, previousNOfFilters, activationFunction, stride=1):
+    def __init__(self, nOfFilters, inputSize, filterSize, previousNOfFilters, activationFunction, stride=1):
         super().__init__()
         self.nOfFilters = nOfFilters
         self.filterSize = filterSize
@@ -63,8 +68,9 @@ class ConvolutionalLayer(Layer):
 
         # Randomly initialise filters of layer with He initialisation
         self.weights = np.random.randn(nOfFilters, previousNOfFilters, filterSize, filterSize) * (2.0 / (previousNOfFilters * filterSize ** 2))**0.5
-        # Biases are initialised as zeros
-        self.biases = np.zeros((nOfFilters), dtype=np.float32)
+        # Untied biases are initialised as zeros
+        outputSize = (inputSize - filterSize) // stride + 1
+        self.biases = np.random.randn(nOfFilters, outputSize, outputSize)#, dtype=np.float32)
 
     def forward(self, inputs):
         """Performs the convolution and stores the result after applying
@@ -76,7 +82,7 @@ class ConvolutionalLayer(Layer):
         #Perform the cross-correlation operation for each input and filter
         for i, input in enumerate(inputs):
             for j, filter in enumerate(self.weights):
-                self.convolutionOutputs[i, j] = self.crossCorrelate(input, filter, self.stride, self.biases)
+                self.convolutionOutputs[i, j] = self.crossCorrelate(input, filter, self.stride, self.biases[j])
 
         #Get the output of the activation function
         self.outputs = self.activationFunction.forward(self.convolutionOutputs)
@@ -101,8 +107,10 @@ class ConvolutionalLayer(Layer):
                 maskedImage = image[:, maskedRow:maskedRow+filterSize, maskedColumn:maskedColumn+filterSize]
                 res = np.sum(np.multiply(maskedImage, filter)) # + np.tensordot(biases, np.ones((outImageSize, outImageSize)))
                 out[outRow, outCol] = res
-
-        return out
+        if type(biases) == np.ndarray:
+            return out + biases
+        else:
+            return out
 
     def getDeltas(self, outputDeltas):
         """Calculates delta values for each neuron, assuming that this is a hidden layer
@@ -110,6 +118,9 @@ class ConvolutionalLayer(Layer):
         """
         activationDerivative = self.activationFunction.getDerivative(self.convolutionOutputs)
         weightedSumDerivative = np.multiply(outputDeltas.reshape(activationDerivative.shape), activationDerivative)
+
+        self.biasGradients = np.sum(weightedSumDerivative, axis=0)
+
 
         dilatedDerivative = np.zeros((weightedSumDerivative.shape[0], 
         weightedSumDerivative.shape[1], 
@@ -139,8 +150,8 @@ class ConvolutionalLayer(Layer):
 class MaxPoolLayer(Layer):
     def __init__(self, windowSize, stride = 1):
         super().__init__()
-        # A pooling layer has no weights, so we just assign a zero array
-        self.weights = np.zeros((1))
+        # A pooling layer has no weights, so we just assign null to it
+        self.weights = None
         self.windowSize = windowSize
         self.stride = stride
         self.errorGradients = None

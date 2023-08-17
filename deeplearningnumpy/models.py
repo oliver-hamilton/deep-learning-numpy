@@ -63,8 +63,8 @@ class NeuralNetwork:
         for i in range(len(self.layers)-1, -1, -1):
             currentLayer = self.layers[i]
             #Reshape error gradients so that they can be added to the weights
-            #TODO: Add back in
-            # currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
+            # TODO: UNCOMMENT
+            #currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
 
         #Make forward pass to get new network outputs that reflect updated weights
         self.forward(inputs)
@@ -128,7 +128,30 @@ class NeuralNetwork:
         #Assemble a list of computed gradient matrices
         estimatedGradients = [None] * len(self.layers)
 
-        #Iterate over each parameter in each layer
+        # Iterate over each bias parameter in each layer
+        for i in range(len(self.layers)):
+            flattenedBiases = self.layers[i].biases.reshape(-1)
+            estimatedGradients[i] = np.zeros(flattenedBiases.size)
+            for j in range(flattenedBiases.size):
+                #A small value so that the gradient can be calculated between 2 points
+                EPSILON = 1e-3
+                #Copy the biases matrix so that it can be replaced once gradient checking completes
+                biasesCopy = self.layers[i].biases.copy()
+                flattenedBiases[j] += EPSILON
+
+                self.forward(inputs)
+                gradPlus = costFunction.getCost(self.layers[-1].outputs, yReal)
+                flattenedBiases[j] -= 2 * EPSILON
+                self.forward(inputs)
+                gradMinus = costFunction.getCost(self.layers[-1].outputs, yReal)
+
+                estimatedGradients[i][j] = (gradPlus - gradMinus) / (2 * EPSILON)
+
+                #Re-instate original layer biases
+                self.layers[i].biases = biasesCopy
+                flattenedBiases = self.layers[i].biases.reshape(-1)
+
+        #Iterate over each weight parameter in each layer
         for i in range(len(self.layers)):
             flattenedWeights = self.layers[i].weights.reshape(-1)
             estimatedGradients[i] = np.zeros(flattenedWeights.size)

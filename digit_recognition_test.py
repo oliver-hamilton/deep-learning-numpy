@@ -52,8 +52,8 @@ layer3 = DenseLayer(256, 64, ActivationLeakyReLU(0.20))
 layer4 = DenseLayer(64, 10, ActivationSoftmax())
 layers = [layer1, layer2, layer3, layer4]
 '''
-layers = [ ConvolutionalLayer(16, 4, 1, ActivationLeakyReLU(0.20), 2)
-         , ConvolutionalLayer(32, 3, 16, ActivationLeakyReLU(0.20), 2)
+layers = [ ConvolutionalLayer(16, 28, 4, 1, ActivationLogistic(), 2)
+         , ConvolutionalLayer(32, 13, 3, 16, ActivationLogistic(), 2)
          , MaxPoolLayer(2, 2)
          , DenseLayer(32 * 3**2, 10, ActivationLogistic())
 ]
