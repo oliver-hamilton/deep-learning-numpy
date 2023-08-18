@@ -55,7 +55,7 @@ class MaxPoolLayer(Layer):
         """
         if isinstance(nextLayer, DenseLayer):
             #Get the rate of change of the error with respect to the output
-            errorSize = np.dot(nextLayer.outputDeltas, nextLayer.weights.T)
+            errorSize = np.dot(nextLayer.outputDeltas, nextLayer._weights.T)
 
             #Reshape to rank 4 tensor
             errorSize = np.reshape(errorSize, self.outputs.shape)
@@ -101,7 +101,7 @@ class MaxPoolLayer(Layer):
         #Define output deltas
         self.outputDeltas = out
 
-    def getErrorGradients(self):
+    def getWeightGradients(self):
         """There are no error gradients to return."""
         return None
 

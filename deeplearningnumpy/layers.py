@@ -3,91 +3,208 @@ import numpy as np
 class Layer:
     """Base class describing shared functionality of Dense, MaxPool and Convolutional layers."""
 
-    def updateWeights(self, gradientSums, learningRate):
-        """Updates the weights according to the accumulated gradients and the learning rate."""
+    def updateWeights(self, learningRate):
+        """Updates the weights and biases of this layer according to the accumulated gradients and the learning rate.
+
+        If this ``Layer`` object does not have any associated weights or biases (e.g. ``MaxPoolLayer``), then calling this function has no effect.
+
+        Parameters
+        ----------
+        learningRate : float
+            Controls the amount by which the weights and biases of the layer are changed on each step. 
+            Both the weights and biases are updated at the same rate.
+
+        """
         if type(self.weights) == np.ndarray:
-            self.weights = np.subtract(self.weights, learningRate * gradientSums)
-            # Sum the output deltas for each data item in the batch
-            # accumulatedDeltas = np.reshape(np.sum(self.outputDeltas, axis=0), (1, -1))
+            self.weights = np.subtract(self.weights, learningRate * self.weightGradients)
             self.biases = np.subtract(self.biases, learningRate * self.biasGradients)
-        pass
 
     def getOutputDeltas(self, expectedValues, costFunction):
-        """Calculates delta values for each neuron in the output layer."""
+        """Calculates delta values for each neuron, assuming that this is the output layer.
+
+        In other words, this function computes the derivative of the cost function with respect
+        to each of this layer's outputs. This function should only be called if this ``Layer`` object
+        is the last layer of some ``NeuralNetwork`` object.
+        
+        Parameters
+        ----------
+        expectedValues : numpy.ndarray
+            The desired values for this layer's outputs. This parameter should have dimensions `(batch_size, out_1, out_2, ..., out_n)`,
+            where `(out_1, out_2, ..., out_n)` are the dimensions of this layer's outputs.
+        costFunction: CostFunction
+            A cost function whose derivative is calculated with respect to the outputs of this layer.
+
+        Notes
+        -----
+        ``CostFunction`` is any of ``MSE``, ``BinaryCrossEntropy``, or ``CategoricalCrossEntropy``.
+        """
         self.outputDeltas = costFunction.getDerivative(self.outputs, expectedValues)
 
-    def getErrorGradients(self):
-        return self.errorGradients
+    def getWeightGradients(self):
+        """Returns the derivative of the cost function with respect to this layer's weights.
+        
+        Returns
+        -------
+        numpy.ndarray
+            The gradients with respect to the weights. Has dimensions equal to the dimensions of the weights.
+        """
+        return self.weightGradients
+    
+    def getBiasGradients(self):
+        """Returns the derivative of the cost function with respect to this layer's biases.
+        
+        Returns
+        -------
+        numpy.ndarray
+            The gradients with respect to the biases. Has dimensions equal to the dimensions of the biases.
+        """
+        return self.biasGradients
 
 class DenseLayer(Layer):
-    def __init__(self, nInputs, nNeurons, activationFunction):
+    """A fully-connected layer of a neural network.
+    
+    Weights are initialised using He initialisation, and biases are zero-initialised.
+
+    Attributes
+    ----------
+    nInputs : int
+        The total number of inputs to this layer.
+    nOutputs : int
+        The total number of outputs (i.e. neurons) of this layer.
+    activationFunction : Activation
+        The activation function to be applied after taking the weighted sum of the inputs.
+    """
+    def __init__(self, nInputs, nOutputs, activationFunction):
         super().__init__()
         # Weights are initialised using He initialisation
-        self.weights = np.random.randn(nInputs, nNeurons) * (2.0 / nInputs)**0.5
+        self._weights = np.random.randn(nInputs, nOutputs) * (2.0 / nInputs)**0.5
         # Biases are initialised as zero vectors
-        self.biases = np.zeros((1, nNeurons), dtype=np.float32)
-        self.activationFunction = activationFunction
+        self._biases = np.zeros((1, nOutputs), dtype=np.float32)
+        self._activationFunction = activationFunction
         
     def forward(self, inputs):
-        """Calculates the weighted sum of the inputs and stores the result
-        after applying the activation function as the output of the layer.
+        """Calculates the weighted sum of `inputs` and stores the output after applying the activation function to it.
+
+        Parameters
+        ----------
+        inputs : numpy.ndarray
+            The inputs to the layer, which should have dimensions `(batchSize, nInputs)`.
+            Otherwise, the inputs will be flattened beyond axis `0`.
         """
         if inputs.ndim > 2:
             inputs = inputs.reshape(-1, np.product(inputs.shape) // inputs.shape[0])
         self.inputs = inputs
-        #Calculate weighted sum
-        self.weightedSum = np.matmul(inputs, self.weights) + self.biases
-        #Apply non-linear activation function
-        self.outputs = self.activationFunction.forward(self.weightedSum)
+        # Calculate weighted sum
+        self.weightedSum = np.matmul(inputs, self._weights) + self._biases
+        # Apply non-linear activation function
+        self.outputs = self._activationFunction.forward(self.weightedSum)
 
     def getDeltas(self, outputDeltas):
-        """Calculates delta values for each neuron, assuming that this is a hidden layer
-        (i.e. not the output layer).
+        """Calculates gradients for each neuron in this layer.
+
+        These gradients include the derivative of the cost function with respect to
+        the inputs, the weights, and the biases.
+
+        Parameters
+        ----------
+        outputDeltas : numpy.ndarray
+            The derivative of the cost function with respect to each of the outputs of this layer.
+            Equivalently, the derivative of the cost function with respect to each of the inputs of the next layer
+            (if there is a next layer).
+            Has dimensions `(batchSize, nOuptuts)`.
         """
         # Get the rate of change of the output with respect to the weighted sum
-        activationDerivative = self.activationFunction.getDerivative(self.weightedSum)
+        activationDerivative = self._activationFunction.getDerivative(self.weightedSum)
 
-        # Get the rate of change of the error with respect to the weighted sum, then multiply with the weights to
-        # get the rate of change of the error with respect to the inputs
+        # Get the rate of change of the error with respect to the weighted sum
         weightedSumDerivative = np.multiply(outputDeltas, activationDerivative)
-        self.inputDeltas = np.matmul(weightedSumDerivative, self.weights.T)
-
-        self.errorGradients = np.matmul(weightedSumDerivative.T, self.inputs).T
-
+        # Derivative of cost w.r.t inputs
+        self.inputDeltas = np.matmul(weightedSumDerivative, self._weights.T)
+        # Derivative of cost w.r.t weights
+        self.weightGradients = np.matmul(weightedSumDerivative.T, self.inputs).T
+        # Derivative of cost w.r.t biases
         self.biasGradients = np.sum(weightedSumDerivative, axis=0)
 
-
 class ConvolutionalLayer(Layer):
+    """A convolutional layer of a neural network.
+    
+    Weights are initialised using He initialisation, and biases are zero-initialised.
+
+    Attributes
+    ----------
+    nOfFilters : int
+        The number of filters convolved over the input.
+    inputSize : int
+        Equal to `width` if the dimensions of the input are `(batchSize, depth, width, width)`.
+    filterSize : int
+        The width / height of each of the filters. Note that this means only square filters can be used.
+    previousNOfFilters : int
+        The number of filters used in the previous layer. If the previous layer was not a ``ConvolutionalLayer``,
+        then this should be set to 1.
+    activationFunction : Activation
+        The activation function to be applied after convolving the filters over the inputs.
+    stride : int, optional
+        The step size to move the kernel by in each cross-correlation operation. Defaults to 1.
+        
+    """
     def __init__(self, nOfFilters, inputSize, filterSize, previousNOfFilters, activationFunction, stride=1):
         super().__init__()
-        self.nOfFilters = nOfFilters
-        self.filterSize = filterSize
-        self.previousNOfFilters = previousNOfFilters
-        self.activationFunction = activationFunction
-        self.stride = stride
+        self._nOfFilters = nOfFilters
+        self._filterSize = filterSize
+        self._previousNOfFilters = previousNOfFilters
+        self._activationFunction = activationFunction
+        self._stride = stride
 
         # Randomly initialise filters of layer with He initialisation
-        self.weights = np.random.randn(nOfFilters, previousNOfFilters, filterSize, filterSize) * (2.0 / (previousNOfFilters * filterSize ** 2))**0.5
+        self._weights = np.random.randn(nOfFilters, previousNOfFilters, filterSize, filterSize) * (2.0 / (previousNOfFilters * filterSize ** 2))**0.5
         # Untied biases are initialised as zeros
-        outputSize = (inputSize - filterSize) // stride + 1
-        self.biases = np.random.randn(nOfFilters, outputSize, outputSize)#, dtype=np.float32)
+        self._outputWidth = (inputSize - filterSize) // stride + 1
+        self._biases = np.zeros((nOfFilters, self._outputWidth, self._outputWidth), dtype=np.float32)
 
     def forward(self, inputs):
-        """Performs the convolution and stores the result after applying
-        the activation function as the output of the layer.
+        """Performs the cross-correlation of each filter over each input in the batch
+        and stores the result after applying the activation function.
+
+        Parameters
+        ----------
+        inputs : numpy.ndarray
+            The inputs to which the cross-correlation operation is to be applied.
+            Has dimensions `(batchSize, depth, inputSize, inputSize)`.
         """
         self.inputs = inputs
-        newImageSize = (inputs.shape[-1] - self.filterSize) // self.stride + 1
-        self.convolutionOutputs = np.zeros((inputs.shape[0], self.nOfFilters, newImageSize, newImageSize), dtype=np.float32)
-        #Perform the cross-correlation operation for each input and filter
-        #for i, input in enumerate(inputs):
-            #for j, filter in enumerate(self.weights):
-        self.convolutionOutputs = self.crossCorrelate(inputs, self.weights, self.stride, self.biases)
+        self.convolutionOutputs = np.zeros((inputs.shape[0], self._nOfFilters, self._outputWidth, self._outputWidth), dtype=np.float32)
+        # Perform the cross-correlation operation for each input and filter
+        self.convolutionOutputs = self.crossCorrelate(inputs, self._weights, self._stride, self._biases)
 
-        #Get the output of the activation function
-        self.outputs = self.activationFunction.forward(self.convolutionOutputs)
+        # Pass the output of the cross correlation into the activation function
+        self.outputs = self._activationFunction.forward(self.convolutionOutputs)
 
     def crossCorrelate(self, images, filters, stride, biases = None):
+        """Performs the cross-correlation of the filters over the inputs.
+
+        If `images` has dimensions ``(batchSize, imagesDepth, inputSize, inputSize)``,
+        and `filters` has dimensions ``(nFilters, filterDepth, filterSize, filterSize)``,
+        we require that `imagesDepth = filterDepth`.
+        Insert new axes at position 0 in `images` and `filters` while either has fewer than
+        4 dimensions.
+        
+        Parameters
+        ----------
+        images : numpy.ndarray
+            The images to be convolved over.
+        filters : numpy.ndarray
+            The filters to convolve over `images`.
+        stride : int
+            The step size to move each kernel by in the cross-correlation operations. Defaults to 1.
+        biases : numpy.ndarray
+            Added to the results after the cross-correlations has been applied.
+
+        Returns
+        -------
+        numpy.ndarray
+            The result of the cross-correlation. Has dimensions ``(batchSize, nFilters, outputSize, outputSize)``,
+            where ``outputSize = (inputSize - filterSize) // stride + 1``.
+        """
         while images.ndim < 4:
             images = np.expand_dims(images, 0)
         _, imageDepth, imageSize, _ = images.shape
@@ -113,37 +230,11 @@ class ConvolutionalLayer(Layer):
         else:
             return out
 
-    """
-    def crossCorrelate(self, image, filter, stride, biases = None):
-        if image.ndim < 3:
-            image = np.expand_dims(image, 0)
-        imageDepth, imageSize, _ = image.shape
-        if filter.ndim < 3:
-            filter = np.expand_dims(filter, 0)
-        filterDepth, filterSize, _ = filter.shape
-
-        # Filter must should not go outside image bounds when moved by stride distance.
-        assert ((imageSize - filterSize) / stride) % 1 == 0
-        # Filter depth must match image depth for convolution to be defined.
-        assert filterDepth == imageDepth
-
-        outImageSize = (imageSize - filterSize) // stride + 1
-        out = np.zeros((outImageSize, outImageSize), dtype=np.float32)
-        for outRow, maskedRow in enumerate(range(0, imageSize - filterSize + 1, stride)):
-            for outCol, maskedColumn in enumerate(range(0, imageSize - filterSize + 1, stride)):
-                maskedImage = image[:, maskedRow:maskedRow+filterSize, maskedColumn:maskedColumn+filterSize]
-                res = np.sum(np.multiply(maskedImage, filter)) # + np.tensordot(biases, np.ones((outImageSize, outImageSize)))
-                out[outRow, outCol] = res
-        if type(biases) == np.ndarray:
-            return out + biases
-        else:
-            return out
-    """
     def getDeltas(self, outputDeltas):
         """Calculates delta values for each neuron, assuming that this is a hidden layer
         (i.e. not the output layer).
         """
-        activationDerivative = self.activationFunction.getDerivative(self.convolutionOutputs)
+        activationDerivative = self._activationFunction.getDerivative(self.convolutionOutputs)
         weightedSumDerivative = np.multiply(outputDeltas.reshape(activationDerivative.shape), activationDerivative)
 
         self.biasGradients = np.sum(weightedSumDerivative, axis=0)
@@ -151,28 +242,28 @@ class ConvolutionalLayer(Layer):
 
         dilatedDerivative = np.zeros((weightedSumDerivative.shape[0], 
         weightedSumDerivative.shape[1], 
-        weightedSumDerivative.shape[2] + (weightedSumDerivative.shape[2] - 1) * (self.stride - 1), 
-        weightedSumDerivative.shape[3] + (weightedSumDerivative.shape[3] - 1) * (self.stride - 1)), 
+        weightedSumDerivative.shape[2] + (weightedSumDerivative.shape[2] - 1) * (self._stride - 1), 
+        weightedSumDerivative.shape[3] + (weightedSumDerivative.shape[3] - 1) * (self._stride - 1)), 
         dtype=np.float32)
 
-        dilatedDerivative[:,:,::self.stride,::self.stride] = weightedSumDerivative
+        dilatedDerivative[:,:,::self._stride,::self._stride] = weightedSumDerivative
 
         #The error gradient of the filter is the convolution of the dilated output derivative over the inputs
-        self.errorGradients = np.zeros(self.weights.shape, dtype=np.float32)
-        for i in range(self.nOfFilters):
-            for j in range(self.previousNOfFilters):
+        self.weightGradients = np.zeros(self._weights.shape, dtype=np.float32)
+        for i in range(self._nOfFilters):
+            for j in range(self._previousNOfFilters):
                 #for i in range(self.nOfFilters):
-                self.errorGradients[i][j] = sum([self.crossCorrelate(self.inputs[k, j], dilatedDerivative[k, i], 1) for k in range(self.inputs.shape[0])])
+                self.weightGradients[i][j] = sum([self.crossCorrelate(self.inputs[k, j], dilatedDerivative[k, i], 1) for k in range(self.inputs.shape[0])])
 
         #Rotate filters by 180 degrees
-        rotatedFilters = np.rot90(self.weights, k = 2, axes=(-1,-2))
+        rotatedFilters = np.rot90(self._weights, k = 2, axes=(-1,-2))
 
         #Pad the dilated output derivative
         paddedDerivative = np.pad(dilatedDerivative, ((0,0), (0,0), (rotatedFilters.shape[-2] - 1, rotatedFilters.shape[-2] - 1), (rotatedFilters.shape[-1] - 1, rotatedFilters.shape[-1] - 1)), 'constant', constant_values=(0))
         self.inputDeltas = np.zeros(self.inputs.shape, dtype=np.float32)
         for k in range(self.inputs.shape[0]):
-            for j in range(self.previousNOfFilters):
-                self.inputDeltas[k, j] = sum([self.crossCorrelate(paddedDerivative[k, i], rotatedFilters[i, j], 1) for i in range(self.nOfFilters)])
+            for j in range(self._previousNOfFilters):
+                self.inputDeltas[k, j] = sum([self.crossCorrelate(paddedDerivative[k, i], rotatedFilters[i, j], 1) for i in range(self._nOfFilters)])
 
 class MaxPoolLayer(Layer):
     def __init__(self, windowSize, stride = 1):
