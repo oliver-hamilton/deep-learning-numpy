@@ -80,13 +80,40 @@ class ConvolutionalLayer(Layer):
         newImageSize = (inputs.shape[-1] - self.filterSize) // self.stride + 1
         self.convolutionOutputs = np.zeros((inputs.shape[0], self.nOfFilters, newImageSize, newImageSize), dtype=np.float32)
         #Perform the cross-correlation operation for each input and filter
-        for i, input in enumerate(inputs):
-            for j, filter in enumerate(self.weights):
-                self.convolutionOutputs[i, j] = self.crossCorrelate(input, filter, self.stride, self.biases[j])
+        #for i, input in enumerate(inputs):
+            #for j, filter in enumerate(self.weights):
+        self.convolutionOutputs = self.crossCorrelate(inputs, self.weights, self.stride, self.biases)
 
         #Get the output of the activation function
         self.outputs = self.activationFunction.forward(self.convolutionOutputs)
 
+    def crossCorrelate(self, images, filters, stride, biases = None):
+        while images.ndim < 4:
+            images = np.expand_dims(images, 0)
+        _, imageDepth, imageSize, _ = images.shape
+        while filters.ndim < 4:
+            filters = np.expand_dims(filters, 0)
+        _, filterDepth, filterSize, _ = filters.shape
+
+        # Filter must should not go outside image bounds when moved by stride distance.
+        assert ((imageSize - filterSize) / stride) % 1 == 0
+        # Filter depth must match image depth for convolution to be defined.
+        assert filterDepth == imageDepth
+
+        outImageSize = (imageSize - filterSize) // stride + 1
+        out = np.zeros((images.shape[0], filters.shape[0], outImageSize, outImageSize), dtype=np.float32)
+        for outRow, maskedRow in enumerate(range(0, imageSize - filterSize + 1, stride)):
+            for outCol, maskedColumn in enumerate(range(0, imageSize - filterSize + 1, stride)):
+                maskedImage = images[:, :, maskedRow:maskedRow+filterSize, maskedColumn:maskedColumn+filterSize]
+                maskedImage = np.expand_dims(maskedImage, 1)
+                res = np.sum(np.multiply(maskedImage, filters), axis=(-1, -2, -3)) # + np.tensordot(biases, np.ones((outImageSize, outImageSize)))
+                out[:, :, outRow, outCol] = res
+        if type(biases) == np.ndarray:
+            return out + biases
+        else:
+            return out
+
+    """
     def crossCorrelate(self, image, filter, stride, biases = None):
         if image.ndim < 3:
             image = np.expand_dims(image, 0)
@@ -111,7 +138,7 @@ class ConvolutionalLayer(Layer):
             return out + biases
         else:
             return out
-
+    """
     def getDeltas(self, outputDeltas):
         """Calculates delta values for each neuron, assuming that this is a hidden layer
         (i.e. not the output layer).
