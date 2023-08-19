@@ -111,7 +111,7 @@ class DenseLayer(Layer):
             The derivative of the cost function with respect to each of the outputs of this layer.
             Equivalently, the derivative of the cost function with respect to each of the inputs of the next layer
             (if there is a next layer).
-            Has dimensions `(batchSize, nOuptuts)`.
+            Has dimensions `(batchSize, nOutputs)`.
         """
         # Get the rate of change of the output with respect to the weighted sum
         activationDerivative = self._activationFunction.getDerivative(self.weightedSum)
@@ -231,15 +231,27 @@ class ConvolutionalLayer(Layer):
             return out
 
     def getDeltas(self, outputDeltas):
-        """Calculates delta values for each neuron, assuming that this is a hidden layer
-        (i.e. not the output layer).
+        """Calculates gradients for each neuron in this layer.
+
+        These gradients include the derivative of the cost function with respect to
+        the inputs, the weights, and the biases.
+
+        Parameters
+        ----------
+        outputDeltas : numpy.ndarray
+            The derivative of the cost function with respect to each of the outputs of this layer.
+            Equivalently, the derivative of the cost function with respect to each of the inputs of the next layer
+            (if there is a next layer).
+            Has dimensions `(batchSize, nFilters, outputWidth, outputWidth)`.
         """
+        # Use the derivative of the activation function to calculate the derivative of the cost w.r.t to the convolution output
         activationDerivative = self._activationFunction.getDerivative(self.convolutionOutputs)
         weightedSumDerivative = np.multiply(outputDeltas.reshape(activationDerivative.shape), activationDerivative)
 
+        # The bias gradients are just the sum of the convolution derivatives over all samples in the batch
         self.biasGradients = np.sum(weightedSumDerivative, axis=0)
 
-
+        # Dilate the convolution derivative with zeros if the stride value is greater than 1
         dilatedDerivative = np.zeros((weightedSumDerivative.shape[0], 
         weightedSumDerivative.shape[1], 
         weightedSumDerivative.shape[2] + (weightedSumDerivative.shape[2] - 1) * (self._stride - 1), 
@@ -248,17 +260,17 @@ class ConvolutionalLayer(Layer):
 
         dilatedDerivative[:,:,::self._stride,::self._stride] = weightedSumDerivative
 
-        #The error gradient of the filter is the convolution of the dilated output derivative over the inputs
+        #The gradient w.r.t each filter is the convolution of the dilated output derivative over the inputs
         self.weightGradients = np.zeros(self._weights.shape, dtype=np.float32)
         for i in range(self._nOfFilters):
             for j in range(self._previousNOfFilters):
                 #for i in range(self.nOfFilters):
                 self.weightGradients[i][j] = sum([self.crossCorrelate(self.inputs[k, j], dilatedDerivative[k, i], 1) for k in range(self.inputs.shape[0])])
 
-        #Rotate filters by 180 degrees
+        #Rotate filters by 180 degrees (to perform convolution instead of cross-correlation)
         rotatedFilters = np.rot90(self._weights, k = 2, axes=(-1,-2))
 
-        #Pad the dilated output derivative
+        #Pad the dilated output derivative and use this to backpropagate the gradient through the convolution
         paddedDerivative = np.pad(dilatedDerivative, ((0,0), (0,0), (rotatedFilters.shape[-2] - 1, rotatedFilters.shape[-2] - 1), (rotatedFilters.shape[-1] - 1, rotatedFilters.shape[-1] - 1)), 'constant', constant_values=(0))
         self.inputDeltas = np.zeros(self.inputs.shape, dtype=np.float32)
         for k in range(self.inputs.shape[0]):
@@ -266,102 +278,126 @@ class ConvolutionalLayer(Layer):
                 self.inputDeltas[k, j] = sum([self.crossCorrelate(paddedDerivative[k, i], rotatedFilters[i, j], 1) for i in range(self._nOfFilters)])
 
 class MaxPoolLayer(Layer):
+    """A max pooling layer of a neural network.
+
+    Attributes
+    ----------
+    windowSize : int
+        The maximum value in each windowSize x windowSize submatrix is propagated to the next layer.
+    stride : int, optional
+        The step size to move the window by after each pooling operation. Defaults to 1.
+        
+    """
     def __init__(self, windowSize, stride = 1):
         super().__init__()
-        # A pooling layer has no weights, so we just assign null to it
-        self.weights = None
-        self.windowSize = windowSize
-        self.stride = stride
-        self.errorGradients = None
+        # A pooling layer has no weights, so we just assign None to it
+        self._weights = None
+        self._windowSize = windowSize
+        self._stride = stride
+        # self.errorGradients = None
 
     def forward(self, inputs):
-        """Performs max pooling to generate the layer's output."""
+        """Performs max pooling to generate this layer's output.
+
+        Parameters
+        ----------
+        inputs : numpy.ndarray
+            The inputs to which the max pooling operation is to be applied.
+            Has dimensions `(batchSize, depth, inputSize, inputSize)`.
+        """
         self.inputs = inputs
         self.outputs = self.maxPool(inputs)
 
     def maxPool(self, images):
-        """Performs max pooling to downsample the matrix."""
+        """Performs max pooling to downsample the matrix.
+
+        Parameters
+        ----------
+        images : numpy.ndarray
+            The images to apply max pooling to.
+
+        Returns
+        -------
+        numpy.ndarray
+            The result of the max pooling. Has dimensions ``(batchSize, depth, outputSize, outputSize)``,
+            where ``(batchSize, depth, inputSize, inputSize)`` are the dimensions of the input, and
+            ``outputSize = (inputSize - windowSize) // stride + 1``.
+        """
         (batchSize, depth, imageSize, _) = images.shape
 
-        #Get size of output tensor
-        outputSize = (imageSize - self.windowSize) // self.stride + 1
+        # Get size of output tensor
+        outputSize = (imageSize - self._windowSize) // self._stride + 1
 
-        #Create order 3 tensor to store output of max pooling
+        # Create 4D array to store output of max pooling
         out = np.zeros((batchSize, depth, outputSize, outputSize), dtype=np.float32)
 
-        #Move window vertically across image
+        # Move window vertically across image
         currentRow = 0
 
-        while currentRow < imageSize - self.windowSize:
-            #Move window horizontally across image
+        while currentRow < imageSize - self._windowSize:
+            # Move window horizontally across image
             currentCol = 0
+            while currentCol < imageSize - self._windowSize:
+                # Get submatrices
+                subImages = images[:, :, currentRow:currentRow + self._windowSize, currentCol:currentCol + self._windowSize]
 
-            while currentCol < imageSize - self.windowSize:
-                #Get submatrices
-                subImages = images[:, :, currentRow:currentRow + self.windowSize, currentCol:currentCol + self.windowSize]
+                # Get maximum within each sub image
+                out[:, :, currentRow // self._stride, currentCol // self._stride] = np.max(subImages, axis=(-2, -1))
 
-                #Get maximum within each sub image
-                out[:, :, currentRow // self.stride, currentCol // self.stride] = np.max(subImages, axis=(-2, -1))
-
-                #Move section being considered to right by stride length
-                currentCol += self.stride
+                # Move section being considered to right by stride length
+                currentCol += self._stride
             
-            #Move section being considered down by stride length
-            currentRow += self.stride
+            # Move section being considered down by stride length
+            currentRow += self._stride
         
-        #Return the output matrix
         return out
 
     def getDeltas(self, outputDeltas):
-        """Calculates delta values, assuming that this is a hidden layer.
-        Even though this layer has no weights, we still need to propagate derivatives
+        """Calculates gradients for each neuron in this layer.
+
+        These gradients include only the derivative of the cost function with respect to
+        the inputs, since there are no weights or biases associated with this layer type.
+        Note that these gradients still need to be calculated in order to propagate derivatives
         backwards from subsequent layers.
+
+        Parameters
+        ----------
+        outputDeltas : numpy.ndarray
+            The derivative of the cost function with respect to each of the outputs of this layer.
+            Equivalently, the derivative of the cost function with respect to each of the inputs of the next layer
+            (if there is a next layer).
+            Has dimensions `(batchSize, depth, outputSize, outputSize)`.
         """
-        '''
-        if isinstance(nextLayer, DenseLayer):
-            #Get the rate of change of the error with respect to the output
-            errorSize = np.dot(nextLayer.outputDeltas, nextLayer.weights.T)
-
-            #Reshape to rank 4 tensor
-            errorSize = np.reshape(errorSize, self.outputs.shape)
-
-        else:
-            errorSize = np.multiply(nextLayer.outputDeltas, np.ones(self.outputs.shape))
-        '''
         (batchSize, depth, imageSize, _) = self.inputs.shape
 
-        #Get size of output tensor
-        outputSize = (imageSize - self.windowSize) // self.stride + 1
+        # Get size of output tensor
+        outputSize = (imageSize - self._windowSize) // self._stride + 1
 
-        #Create rank 4 tensor to store output of max pooling
+        # Create 4D array to store derivatives
         out = np.zeros((batchSize, depth, imageSize, imageSize), dtype=np.float32)
 
-        #Move window vertically across image
-
+        # Move window vertically across image
         reshapedOutputDeltas = outputDeltas.reshape((batchSize, depth, outputSize, outputSize))
 
         for batchItem in range(batchSize):
             for d in range(depth):
                 currentRow = 0
-                while currentRow < imageSize - self.windowSize:
-                    #Move window horizontally across image
+                while currentRow < imageSize - self._windowSize:
+                    # Move window horizontally across image
                     currentCol = 0
+                    while currentCol < imageSize - self._windowSize:
+                        # Get submatrix
+                        subMatrix = self.inputs[batchItem, d, currentRow:currentRow + self._windowSize, currentCol:currentCol + self._windowSize]
 
-                    while currentCol < imageSize - self.windowSize:
-                        #Get submatrix
-                        subMatrix = self.inputs[batchItem, d, currentRow:currentRow + self.windowSize, currentCol:currentCol + self.windowSize]
+                        # Get indices of maximum values within each sub image
+                        flattenedIndices = np.argmax(subMatrix.reshape(self._windowSize*self._windowSize))
+                        out[batchItem, d, currentRow + (flattenedIndices // self._windowSize), currentCol + (flattenedIndices % self._windowSize)] = reshapedOutputDeltas[batchItem, d, (currentRow // self._stride), (currentCol // self._stride)]
 
-                        #Get indices of maximum values within each sub image
-                        #print(subMatrix.reshape(self.windowSize*self.windowSize))
-                        flattenedIndices = np.argmax(subMatrix.reshape(self.windowSize*self.windowSize))
-
-                        out[batchItem, d, currentRow + (flattenedIndices // self.windowSize), currentCol + (flattenedIndices % self.windowSize)] = reshapedOutputDeltas[batchItem, d, (currentRow // self.stride), (currentCol // self.stride)]
-
-                        #Move section being considered to right by stride length
-                        currentCol += self.stride
+                        # Move section being considered to right by stride length
+                        currentCol += self._stride
                     
-                    #Move section being considered down by stride length
-                    currentRow += self.stride
+                    # Move section being considered down by stride length
+                    currentRow += self._stride
         
-        #Define output deltas
+        # Define derivatives of the cost function w.r.t the inputs
         self.inputDeltas = out
