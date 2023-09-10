@@ -1,6 +1,6 @@
 import numpy as np
 from deeplearningnumpy.models import NeuralNetwork
-from deeplearningnumpy.layers import DenseLayer
+from deeplearningnumpy.layers import ConvolutionalLayer, DenseLayer
 from deeplearningnumpy.activations import ActivationLeakyReLU, ActivationSoftmax
 from deeplearningnumpy.cost_functions import CategoricalCrossEntropy
 from tkinter import *
@@ -20,7 +20,11 @@ outputText = StringVar()
 outputLabel = Label(window, text="Output:")
 
 def testImage(network, img):
-    pixels = np.reshape(img, (1, 784)) / 255.0
+    # Default if first layer is Dense layer
+    pixels = np.reshape(img, (1, 28 * 28)) / 255.0
+    if isinstance(network._layers[0], ConvolutionalLayer):
+        pixels = np.reshape(img, (1, 28, 28)) / 255.0
+    
     network.forward(pixels)
     return network.getOutputs()
 

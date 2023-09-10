@@ -15,9 +15,9 @@ class Layer:
             Both the weights and biases are updated at the same rate.
 
         """
-        if type(self.weights) == np.ndarray:
-            self.weights = np.subtract(self.weights, learningRate * self.weightGradients)
-            self.biases = np.subtract(self.biases, learningRate * self.biasGradients)
+        if type(self._weights) == np.ndarray:
+            self._weights = np.subtract(self._weights, learningRate * self.weightGradients)
+            self._biases = np.subtract(self._biases, learningRate * self.biasGradients)
 
     def getOutputDeltas(self, expectedValues, costFunction):
         """Calculates delta values for each neuron, assuming that this is the output layer.

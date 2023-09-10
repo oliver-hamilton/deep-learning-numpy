@@ -5,9 +5,9 @@ from deeplearningnumpy.models import NeuralNetwork
 from deeplearningnumpy.layers import ConvolutionalLayer, DenseLayer, MaxPoolLayer
 from applyDigitRecognition import loadFrontEnd
 
-BATCH_SIZE = 8    # The number of training samples in a batch
+BATCH_SIZE = 1024    # The number of training samples in a batch
 N_PIXELS = 784      # The number of pixels in a single image
-N_EPOCHS = 10       # The number of times to iterate over the training set
+N_EPOCHS = 2       # The number of times to iterate over the training set
 LEARNING_RATE = 0.05 # How much the weights should be updated by during training
 
 def loadMnist(fileNamePrefix):
@@ -45,32 +45,35 @@ def oneHotEncoding(n):
 imageData, labelData = loadMnistTraining()
 
 #Define network layers
-'''
+
 layer1 = DenseLayer(N_PIXELS, 1024, ActivationLeakyReLU(0.20))
 layer2 = DenseLayer(1024, 256, ActivationLeakyReLU(0.20))
 layer3 = DenseLayer(256, 64, ActivationLeakyReLU(0.20))
 layer4 = DenseLayer(64, 10, ActivationSoftmax())
 layers = [layer1, layer2, layer3, layer4]
-'''
-layers = [ ConvolutionalLayer(16, 28, 4, 1, ActivationLogistic(), 2)
-         , ConvolutionalLayer(32, 13, 3, 16, ActivationLogistic(), 2)
-         , MaxPoolLayer(2, 2)
-         , DenseLayer(32 * 3**2, 10, ActivationLogistic())
+
+"""
+layers = [ ConvolutionalLayer(4, 28, 4, 1, ActivationLogistic(), 2)
+         , ConvolutionalLayer(4, 13, 3, 4, ActivationLogistic(), 2)
+         , DenseLayer(4 * 6**2, 10, ActivationLogistic())
 ]
+"""
 
 # We use categorical cross entropy as we are trying to categorise samples into more than 2 categories
-costFunction = MSE()
+costFunction = CategoricalCrossEntropy()
 
 #Create new network
-digitNetwork = NeuralNetwork("testNetwork", layers)
+digitNetwork = NeuralNetwork("testNetworkDense", layers)
 
 testImages, testLabels = loadMnistTesting()
+
+# print(imageData.reshape(-1, 28 * 28).shape[0])
 
 #Load previous weights, or generate them if they don't exist
 try:
     digitNetwork.loadWeights()
 except FileNotFoundError:
-    digitNetwork.train(imageData.reshape(-1, 1, 28, 28), labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, True, testImages.reshape(-1, 1, 28, 28), testLabels)
+    digitNetwork.train(imageData.reshape(-1, 28 * 28), labelData, costFunction, BATCH_SIZE, N_EPOCHS, LEARNING_RATE, True, testImages.reshape(-1, 1, 28, 28), testLabels)
     digitNetwork.saveWeights()
 
 # Evaluate accuracy on test set

@@ -104,7 +104,7 @@ class NeuralNetwork:
         """
 
         self.forward(inputs)
-        self.errorGradientsSums = [None]*len(self._layers)
+        #self.errorGradientsSums = [None]*len(self._layers)
 
         #Iterate over each layer, starting with the output layer
         for i in range(len(self._layers)-1, -1, -1):
@@ -117,13 +117,12 @@ class NeuralNetwork:
                 currentLayer.getDeltas(self._layers[i+1].inputDeltas)
 
             #Get error gradients
-            self.errorGradientsSums[i] = (currentLayer.getErrorGradients())
+            #self.errorGradientsSums[i] = (currentLayer.getErrorGradients())
 
         #Update all network weights and biases
         for i in range(len(self._layers)-1, -1, -1):
             currentLayer = self._layers[i]
-            #Reshape error gradients so that they can be added to the weights
-            currentLayer.updateWeights(self.errorGradientsSums[i], learningRate)
+            currentLayer.updateWeights(learningRate)
 
 
     def train(self, X, y, costFunction, batchSize=None, epochs=10, learningRate = 0.1, checkGradients = False, testImages = [], testLabels = []):
@@ -159,7 +158,7 @@ class NeuralNetwork:
         ``CostFunction`` is any of ``MSE``, ``BinaryCrossEntropy``, or ``CategoricalCrossEntropy``.
         """
         #If the cost function is CCE, the final activation must be softmax
-        if not isinstance(costFunction, CategoricalCrossEntropy) and isinstance(self._layers[-1].activationFunction, ActivationSoftmax):
+        if not isinstance(costFunction, CategoricalCrossEntropy) and isinstance(self._layers[-1]._activationFunction, ActivationSoftmax):
             raise Exception("The Softmax function can only be used with CCE loss")
         
         #Get number of training examples
@@ -185,9 +184,9 @@ class NeuralNetwork:
                     print(f"Cost: {costFunction.getCost(self._layers[-1].outputs, currentLabels)}")
 
                     #Numerically estimate the gradients to verify backprop implementation
-                    if checkGradients:
-                        print(f"Error gradients (by backprop): {self.errorGradientsSums}")
-                        print(f"Numerically estimated gradients: {self.getEstimatedGradients(currentBatch, currentLabels, costFunction)}")
+                    #if checkGradients:
+                        #print(f"Error gradients (by backprop): {self.errorGradientsSums}")
+                        #print(f"Numerically estimated gradients: {self.getEstimatedGradients(currentBatch, currentLabels, costFunction)}")
 
                     # Evaluate accuracy on test set
                     '''
